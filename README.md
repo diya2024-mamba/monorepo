@@ -21,7 +21,7 @@ make run
 
 You can see the list of available commands with:
 
-```
+```bash
 make help
 ```
 
