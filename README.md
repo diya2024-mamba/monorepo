@@ -7,6 +7,7 @@ Evaluate Mamba models using the [Eleuther AI Language Model Evaluation Harness](
 Install [poetry](https://python-poetry.org/docs/):
 
 ```bash
+pip install --upgrade pip setuptools wheel packaging
 pip install poetry
 ```
 
