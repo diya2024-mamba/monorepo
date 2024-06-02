@@ -15,3 +15,10 @@ Install dependencies and pre-commit hooks:
 ```bash
 bash ./scripts/setup.sh
 ```
+
+## Usage
+
+Finetune a pretrained Mamba from HuggingFace:
+```bash
+poetry run python train.py
+```
