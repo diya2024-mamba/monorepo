@@ -4,22 +4,31 @@ Evaluate Mamba models using the [Eleuther AI Language Model Evaluation Harness](
 
 ## Setup
 
-Install [poetry](https://python-poetry.org/docs/):
+If you use VSCode, you can use the provided devcontainer (`devcontainer.json`).
+
+To install locally:
 
 ```bash
-pip install --upgrade pip setuptools wheel packaging
-pip install poetry
+make setup_locally
 ```
 
-Install dependencies and pre-commit hooks:
+To build a docker image and run the container:
 
 ```bash
-bash ./scripts/setup.sh
+make build
+make run
+```
+
+You can see the list of available commands with:
+
+```
+make help
 ```
 
 ## Usage
 
 Finetune a pretrained Mamba from HuggingFace:
+
 ```bash
 poetry run python train.py
 ```
