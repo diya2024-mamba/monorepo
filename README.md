@@ -4,20 +4,14 @@ Evaluate Mamba models using the [Eleuther AI Language Model Evaluation Harness](
 
 ## Setup
 
-1. Install [poetry](https://python-poetry.org/docs/):
+Install [poetry](https://python-poetry.org/docs/):
 
 ```bash
 pip install poetry
 ```
 
-2. Install dependencies:
+Install dependencies and pre-commit hooks:
 
 ```bash
-poetry install
-```
-
-3. Install pre-commit hooks:
-
-```bash
-pre-commit install
+bash ./scripts/setup.sh
 ```
