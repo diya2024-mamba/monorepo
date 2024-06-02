@@ -9,7 +9,7 @@ If you use VSCode, you can use the provided devcontainer (`devcontainer.json`).
 To install locally:
 
 ```bash
-make setup_locally
+make setup-locally
 ```
 
 To build a docker image and run the container:
@@ -30,5 +30,5 @@ make help
 Finetune a pretrained Mamba from HuggingFace:
 
 ```bash
-poetry run python train.py
+python src/train.py
 ```

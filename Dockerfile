@@ -11,7 +11,7 @@ WORKDIR /code
 
 COPY . .
 
-RUN poetry export -f requirements.txt --output requirements.txt --without-hashes --dev \
+RUN poetry export -f requirements.txt --output requirements.txt --without-hashes --with dev \
 	&& pip install --no-cache-dir -r requirements.txt \
 	&& rm requirements.txt
 
