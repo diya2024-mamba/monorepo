@@ -30,5 +30,6 @@ make help
 Finetune a pretrained Mamba from HuggingFace:
 
 ```bash
-python src/train.py
+cd src
+python train.py
 ```
