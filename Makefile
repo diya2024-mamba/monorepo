@@ -38,7 +38,7 @@ setup-locally:
 
 .PHONY: build
 build:
-	docker build --platform $(PLATFORM) -t $(IMAGE_NAME):$(TAG) .
+	docker build --platform $(PLATFORM) -f .devcontainer/Dockerfile -t $(IMAGE_NAME):$(TAG) .
 
 .PHONY: run
 run:
