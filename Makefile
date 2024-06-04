@@ -30,7 +30,7 @@ endif
 .PHONY: setup-locally
 setup-locally:
 	pip install poetry
-	poetry export -f requirements.txt --output requirements.txt --without-hashes --dev
+	poetry export -f requirements.txt --output requirements.txt --without-hashes --with dev
 	poetry run pip install -r requirements.txt
 	rm requirements.txt
 	poetry run pre-commit install --install-hooks
