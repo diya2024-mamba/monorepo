@@ -1,0 +1,17 @@
+channels:
+  - pytorch
+  - nvidia
+  - defaults
+dependencies:
+  - python=3.9.19
+  - pytorch=2.2.1
+  - pytorch-cuda=12.1
+  - pip=24.0
+  - pip:
+    - transformers==4.39.0
+    - lm-eval==0.4.2
+    # - causal-conv1d==1.2.0.post2
+    # - mamba-ssm @ git+https://github.com/Koziev/mamba@333cae8b36b7a8b7f9b024f38a8125785cc36906
+    - black==24.4.2
+    - pre-commit==3.7.1
+    - ruff==0.4.7
