@@ -1,19 +1,19 @@
-FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-devel
+FROM pytorch/pytorch:2.2.1-cuda12.1-cudnn8-devel
 
 RUN apt-get update && apt-get install -y git
 
-RUN pip install poetry==1.4.2
-
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_CREATE=false
-
 WORKDIR /code
 
-COPY . .
+RUN pip install \
+	transformers==4.39.0 \
+	lm-eval==0.4.2 \
+	black==24.4.2 \
+	pre-commit==3.7.1 \
+	ruff==0.4.7 \
+	causal-conv1d==1.2.0.post2 \
+	mamba-ssm==1.2.0.post1
 
-RUN poetry export -f requirements.txt --output requirements.txt --without-hashes --with dev \
-	&& pip install --no-cache-dir -r requirements.txt \
-	&& rm requirements.txt
+COPY . .
 
 RUN pre-commit install --install-hooks
 
