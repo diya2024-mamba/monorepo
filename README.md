@@ -1,6 +1,6 @@
-# benchmarks
+# Monorepo
 
-Evaluate Mamba models using the [Eleuther AI Language Model Evaluation Harness](https://github.com/EleutherAI/lm-evaluation-harness)
+For the DIYA Mamba Team of 2024
 
 ## Prerequisites
 
