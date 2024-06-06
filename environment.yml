@@ -1,0 +1,15 @@
+channels:
+  - pytorch
+  - nvidia
+  - defaults
+dependencies:
+  - python=3.9.19
+  - pytorch=2.2.1
+  - pytorch-cuda=12.1
+  - pip=24.0
+  - pip:
+    - transformers==4.39.0
+    - lm-eval==0.4.2
+    - black==24.4.2
+    - pre-commit==3.7.1
+    - ruff==0.4.7

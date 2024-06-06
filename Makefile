@@ -29,12 +29,11 @@ endif
 
 .PHONY: setup-locally
 setup-locally:
-	pip install poetry
-	poetry export -f requirements.txt --output requirements.txt --without-hashes --with dev
-	poetry run pip install -r requirements.txt
-	rm requirements.txt
-	poetry run pre-commit install --install-hooks
-	poetry shell
+	conda env create -n $(IMAGE_NAME) -f environment.yml || true
+	conda env update -n $(IMAGE_NAME) -f environment.yml --prune
+	conda run -n $(IMAGE_NAME) pip install \
+		causal-conv1d==1.2.0.post2 \
+		mamba-ssm==1.2.0.post1
 
 .PHONY: build
 build:

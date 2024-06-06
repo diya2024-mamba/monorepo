@@ -2,6 +2,11 @@
 
 Evaluate Mamba models using the [Eleuther AI Language Model Evaluation Harness](https://github.com/EleutherAI/lm-evaluation-harness)
 
+## Prerequisites
+
+* Anaconda/Miniconda (conda)
+* CUDA 12.1+
+
 ## Setup
 
 If you use VSCode, you can use the provided devcontainer (`devcontainer.json`).
@@ -10,6 +15,8 @@ To install locally:
 
 ```bash
 make setup-locally
+conda activate mamba-benchmarks
+pre-commit install
 ```
 
 To build a docker image and run the container:
@@ -35,6 +42,7 @@ python train.py
 ```
 
 Evaluate a pretrained Mamba using `lm-evaluation-harness`:
+
 ```bash
 cd src
 python eval.py --model mamba_ssm --model_args pretrained=state-spaces/mamba-130m --tasks hellaswag --device cuda --batch_size 32
