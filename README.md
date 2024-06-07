@@ -7,7 +7,7 @@ For the DIYA Mamba Team of 2024
 - Anaconda/Mamba (conda)
 - CUDA 12.1+
 
-You also need to create a `.env` file, see `.env.example`  
+You also need to create a `.env` file, see `.env.example`
 
 ## Setup
 
