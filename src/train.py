@@ -1,12 +1,24 @@
 """Modified from https://github.com/redotvideo/mamba-chat/blob/main/train_mamba.py"""
 
 import argparse
+import os
+from datetime import datetime
 
+import mlflow
 import torch
+from dotenv import load_dotenv
 from mamba_ssm.models.mixer_seq_simple import MambaLMHeadModel
+from transformers import AutoTokenizer, TrainingArguments
+
 from trainer.data import ChatDataModule
 from trainer.mamba_trainer import MambaTrainer
-from transformers import AutoTokenizer, TrainingArguments
+
+load_dotenv()
+
+mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000"))
+mlflow.set_experiment("Training Example")
+mlflow.set_tag("mlflow.runName", datetime.now().strftime("%Y%m%d%H%M%S"))
+mlflow.autolog()
 
 
 def run(args):
