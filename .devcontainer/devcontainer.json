@@ -15,7 +15,8 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "terminal.integrated.shell.linux": "/bin/bash"
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "python.defaultInterpreterPath": "/root/micromamba/envs/mamba-benchmarks/bin/python"
       },
       "extensions": [
         "ms-python.python"
