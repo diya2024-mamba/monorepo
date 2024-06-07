@@ -3,7 +3,11 @@
 import os
 
 import torch
+from mamba_ssm.models.config_mamba import MambaConfig
 from transformers import Trainer
+
+# for mlflow logging
+MambaConfig.to_dict = lambda self: self.__dict__
 
 
 class MambaTrainer(Trainer):
