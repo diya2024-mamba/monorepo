@@ -4,14 +4,14 @@ For the DIYA Mamba Team of 2024
 
 ## Prerequisites
 
-* Anaconda/Miniconda (conda)
-* CUDA 12.1+
+- Anaconda/Mamba (conda)
+- CUDA 12.1+
 
 ## Setup
 
 If you use VSCode, you can use the provided devcontainer (`devcontainer.json`).
 
-To install locally:
+To install locally using conda:
 
 ```bash
 make setup-locally
