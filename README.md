@@ -39,13 +39,13 @@ make help
 Finetune a pretrained Mamba from HuggingFace:
 
 ```bash
-cd src
+cd src/projects/llm
 python train.py
 ```
 
 Evaluate a pretrained Mamba using `lm-evaluation-harness`:
 
 ```bash
-cd src
+cd src/projects/llm
 python eval.py --model mamba_ssm --model_args pretrained=state-spaces/mamba-130m --tasks hellaswag --device cuda --batch_size 32
 ```
