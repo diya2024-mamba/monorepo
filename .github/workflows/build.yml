@@ -45,7 +45,6 @@ jobs:
   build_image:
     needs: initialize_runner
     runs-on: self-hosted
-    environment: [self-hosted, Linux, X64]
 
     steps:
       - name: Checkout repository
