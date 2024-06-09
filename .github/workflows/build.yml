@@ -31,9 +31,21 @@ jobs:
           ID=$(echo '${{ steps.deploy.outputs.response }}' | jq -r '.id')
           echo "::set-output name=runpod_job_id::$ID"
 
+      - name: Register Runner
+        id: register_runner
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const response = await github.actions.createRegistrationTokenForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            core.setOutput('token', response.data.token);
+
   build_image:
     needs: initialize_runner
-    runs-on: runpod
+    runs-on: self-hosted
+    environment: [self-hosted, Linux, X64]
 
     steps:
       - name: Checkout repository
@@ -87,3 +99,14 @@ jobs:
           method: "POST"
           customHeaders: '{"Content-Type": "application/json"}'
           bearerToken: ${{ secrets.RUNPOD_API_KEY }}
+
+      - name: Deregister Runner
+        if: ${{ always() }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.actions.deleteSelfHostedRunnerFromRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              runner_id: context.runner.id
+            });
