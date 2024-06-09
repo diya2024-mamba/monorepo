@@ -162,7 +162,3 @@ cython_debug/
 #.idea/
 
 z!
-
-# generate requirements.txt from poetry
-requirements.txt
-poetry.lock
