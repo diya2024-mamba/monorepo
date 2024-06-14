@@ -1,5 +1,5 @@
-IMAGE_NAME = mamba-benchmarks
-CONTAINER_NAME = mamba-benchmarks-container
+IMAGE_NAME = diya2024-mamba
+CONTAINER_NAME = diya2024-mamba-container
 TAG = latest
 
 # Determine the current platform

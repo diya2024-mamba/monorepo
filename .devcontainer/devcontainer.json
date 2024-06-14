@@ -1,5 +1,5 @@
 {
-  "name": "mamba-benchmarks",
+  "name": "diya2024-mamba",
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".."
@@ -16,7 +16,7 @@
     "vscode": {
       "settings": {
         "terminal.integrated.shell.linux": "/bin/bash",
-        "python.defaultInterpreterPath": "/root/micromamba/envs/mamba-benchmarks/bin/python"
+        "python.defaultInterpreterPath": "/root/micromamba/envs/diya2024-mamba/bin/python"
       },
       "extensions": [
         "ms-python.python"

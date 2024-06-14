@@ -8,13 +8,13 @@ ENV MAMBA=/root/.local/bin/micromamba
 WORKDIR /code
 
 COPY environment.yml .
-RUN $MAMBA create -n mamba-benchmarks -f environment.yml
-RUN $MAMBA run -n mamba-benchmarks pip install \
+RUN $MAMBA create -n diya2024-mamba -f environment.yml
+RUN $MAMBA run -n diya2024-mamba pip install \
 	causal-conv1d==1.2.0.post2 \
 	mamba-ssm==1.2.0.post1
 
 COPY . .
 
-RUN $MAMBA run -n mamba-benchmarks pre-commit install --install-hooks
+RUN $MAMBA run -n diya2024-mamba pre-commit install --install-hooks
 
 ENTRYPOINT [".devcontainer/entrypoint.sh"]
