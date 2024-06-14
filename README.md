@@ -11,7 +11,7 @@ You also need to create a `.env` file, see `.env.example`
 
 ## Setup
 
-If you use VSCode, you can use the provided devcontainer (`devcontainer.json`).
+If you use VSCode, you can use the provided devcontainer (`.devcontainer`).
 
 To install locally using conda:
 
