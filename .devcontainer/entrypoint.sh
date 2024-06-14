@@ -13,5 +13,5 @@ fi
 unset __mamba_setup
 # <<< mamba initialize <<<
 
-micromamba activate mamba-benchmarks
+micromamba activate diya2024-mamba
 exec /bin/bash

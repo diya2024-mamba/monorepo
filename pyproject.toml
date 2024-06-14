@@ -1,5 +1,5 @@
 [project]
-name = "mamba-benchmarks"
+name = "diya2024-mamba"
 version = "0.1.0"
 
 [tool.black]

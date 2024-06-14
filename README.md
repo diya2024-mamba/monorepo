@@ -17,7 +17,7 @@ To install locally using conda:
 
 ```bash
 make setup-locally
-conda activate mamba-benchmarks
+conda activate diya2024-mamba
 pre-commit install
 ```
 
