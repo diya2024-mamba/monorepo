@@ -1,0 +1,34 @@
+env_specific_enc_dec: True
+actor_critic: 
+  use_compile: True
+  use_mlp: True
+  d_model: 64
+  activation: silu # identity, tanh, gelu, relu, eli, swish, silu, glu, sigmoid, softplus, modrelu, 
+  optimizer: adam # adam
+  gradient_visualization: False
+  last_operation: mean # sum or mean
+  input_to_hidden: mean # sum or mean
+  hidden_to_output: mean # sum or mean 
+  pos_encoding: True
+
+mlp:
+  depth: 1
+  hidden_dim: 64
+  expansion_dim: 64
+  dropout: 0.0
+  activation: silu
+
+mamba:
+  d_state: 32
+  d_conv: 4
+  expand: 2
+  num_blocks: 1
+
+
+
+
+
+
+
+
+
