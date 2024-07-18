@@ -5,12 +5,12 @@ character: 헤르미온느
 # retriever
 embedding_type: open_ai
 embedding_model: None
-db: db\kor_openai_ver1
+db: db/kor_openai_ver1
 
 
 # generator
 generator_type: open_ai
-generator_model: gpt-3.5-turbo
+generator_model: gpt-3.5-turbo-0125
 
 
 # prompt
