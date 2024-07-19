@@ -1,44 +1,28 @@
-# Run the app
-# mesop main.py
-import os
+from dotenv import load_dotenv
+from source.generator import generate_chain, llm_generator
+from source.retreiver import script_retriever
+from source.utils import get_argumnets, load_yaml
 
-import mesop as me
-import mesop.labs as mel
+if __name__ == "__main__":
 
-from utils import load_yaml
-from generator import llm_generator, generate_chain
-from retreiver import script_retriever
+    load_dotenv()
 
+    args = get_argumnets()
+    config = load_yaml(path=args.config_yaml)
 
-prj_dir  = os.path.dirname(os.path.abspath(__file__))
-config_path = os.path.join(prj_dir, 'config_yaml', 'base.yaml')
-config = load_yaml(path=config_path)
+    llm = llm_generator(generator_type=config['generator_type'], generator_model=config['generator_model'])
 
+    user_input = input("대화를 시작하세요: ")
 
-llm = llm_generator(generator_type=config['generator_type'], generator_model=config['generator_model'])
+    # Retriever 활용하여 script 불러오기
+    script = script_retriever(config['embedding_type'], config['embedding_model'], config['db'], query=user_input)
+    print(f"검색된 script: {script}")
 
+    # 프롬프트 생성
+    prompt_template = config['prompt']
+    prompt_variables = {"script": script, "question": user_input, "character": config['character']}
 
-@me.page(
-  path="/text_to_text",
-  title="Text to Text Example",
-)
-def app():
-  mel.text_to_text(
-    upper_case_stream,
-    title="페르소나 챗봇",
-  )
+    # 응답 생성
+    answer = generate_chain(llm, prompt_template, prompt_variables)
 
-
-def upper_case_stream(query: str):
-  script = script_retriever(config['embedding_type'], 
-                            config['embedding_model'], 
-                            config['db'],
-                            query)
-
-  prompt = config['prompt']
-  prompt_variables = {"script": script,
-                      "question": query,
-                      "character": config['character']}
-  print(script)
-  answer = generate_chain(llm, prompt, prompt_variables)
-  return answer
+    print(f"AI: {answer}")
