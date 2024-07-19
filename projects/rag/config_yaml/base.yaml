@@ -16,9 +16,9 @@ generator_model: gpt-3.5-turbo-0125
 # prompt
 prompt : "instruction: 우리는 연극을 할거야.
 <script>를 읽어.
-<script> 대사를 최대한 활용해서 대답해. 
-넌 {character}처럼 이야기해. 
-한 번에 하나의 대사만 해. 
+<script> 대사를 최대한 활용해서 대답해.
+넌 {character}처럼 이야기해.
+한 번에 하나의 대사만 해.
 <partner>의 question에 <script> 안의 {character}처럼 답해.
 
 <script>
