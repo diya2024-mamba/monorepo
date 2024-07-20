@@ -99,7 +99,7 @@ class AgnosticBase(nn.Module):
         self.use_mlp: bool = cfg.nn.actor_critic.use_mlp
         if self.input_to_hidden == "mean":
             self.in_hidden_op = torch.mean
-        elif self.in_hidden_op == "sum":
+        elif self.input_to_hidden == "sum":
             self.in_hidden_op = torch.sum
         if self.hidden_to_output == "mean":
             self.out_hidden_op = torch.mean

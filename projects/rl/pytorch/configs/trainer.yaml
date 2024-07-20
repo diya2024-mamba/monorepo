@@ -27,19 +27,19 @@ experiment:
   resume_update_idx: 0
   resume_dir: None # output/2023-06-16/23-51-58/
 
-  pretraining_env_ids: ['CartPole-v1', 
+  pretraining_env_ids: ['CartPole-v1',
   'InvertedPendulum-v4',
-  # 'LunarLander-v2', 
-  # 'BipedalWalker-v3', 
-  # 'Acrobot-v1', 
-  # 'LunarLanderContinuous-v2', 
-  # 'Pendulum-v1', 
-  # 'MountainCarContinuous-v0', 
+  # 'LunarLander-v2',
+  # 'BipedalWalker-v3',
+  # 'Acrobot-v1',
+  # 'LunarLanderContinuous-v2',
+  # 'Pendulum-v1',
+  # 'MountainCarContinuous-v0',
   # 'BipedalWalkerHardcore-v3'
-  ] 
+  ]
   finetuning_env_ids: [
-  'Ant-v4', 
-  'Hopper-v4', 
+  'Ant-v4',
+  'Hopper-v4',
   'HalfCheetah-v4',
   'Reacher-v4',
   'InvertedDoublePendulum-v4',
@@ -68,7 +68,7 @@ wandb:
 paths:
   dir: outputs/${now:%Y-%m-%d/%H-%M-%S}
   log: outputs/${now:%Y-%m-%d/%H-%M-%S}/runs
-  video: outputs/${now:%Y-%m-%d/%H-%M-%S}/videos 
-  checkpoints: outputs/${now:%Y-%m-%d/%H-%M-%S}/checkpoints 
-  src: outputs/${now:%Y-%m-%d/%H-%M-%S}/src 
-  scripts: outputs/${now:%Y-%m-%d/%H-%M-%S}/scripts 
+  video: outputs/${now:%Y-%m-%d/%H-%M-%S}/videos
+  checkpoints: outputs/${now:%Y-%m-%d/%H-%M-%S}/checkpoints
+  src: outputs/${now:%Y-%m-%d/%H-%M-%S}/src
+  scripts: outputs/${now:%Y-%m-%d/%H-%M-%S}/scripts
