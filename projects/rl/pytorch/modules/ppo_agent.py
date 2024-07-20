@@ -1,32 +1,27 @@
-import math
-import numpy as np
+from pathlib import Path
+from typing import Any, Dict, List, TypeVar
+
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
-from torch.optim.lr_scheduler import CosineAnnealingLR
-from omegaconf import OmegaConf
-from modules.networks.actor_critic_agnostic import AgnosticStochasticActor, AgnosticVNetwork
-from modules.networks.actor_critic_specific import SpecificActor, SpecificVNetwork
+from gymnasium.core import Env as GymnasiumEnv
 from gymnasium.spaces import Box as GymnasiumBox
 from gymnasium.spaces import Discrete as GymnasiumDiscrete
-from gymnasium.core import Env as GymnasiumEnv
-from typing import TypeVar, List, Dict, Any
-from pathlib import Path 
+from modules.networks.actor_critic_agnostic import (
+    AgnosticStochasticActor,
+    AgnosticVNetwork,
+)
+from modules.networks.actor_critic_specific import SpecificActor, SpecificVNetwork
+from omegaconf import OmegaConf
 
 GymSpace = TypeVar('GymSpace', GymnasiumBox, GymnasiumDiscrete)
 Env = GymnasiumEnv
 
 
-
 class PPOAgent(nn.Module):
-    def __init__(self, 
-                 cfg: OmegaConf, 
-                 env_ids: List[str], 
-                 env_list,
-                 mode='pretraining'):
+    def __init__(self, cfg: OmegaConf, env_ids: List[str], env_list, mode='pretraining'):
         super().__init__()
-        self.cfg = cfg        
+        self.cfg = cfg
         self.mode = mode
         if cfg.nn.env_specific_enc_dec:
             self.actor = SpecificActor(cfg, env_ids, env_list)
@@ -41,7 +36,6 @@ class PPOAgent(nn.Module):
         actor_lr = cfg.ppo.actor_lr
         critic_lr = cfg.ppo.critic_lr
 
-        
         # Optimizers
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_lr)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_lr)
@@ -51,7 +45,7 @@ class PPOAgent(nn.Module):
     def optim_zero_grad(self):
         self.actor_optimizer.zero_grad()
         self.critic_optimizer.zero_grad()
-    
+
     def optim_step(self):
         if self.use_grad_clip:
             nn.utils.clip_grad_norm_(self.actor.parameters(), self.cfg.ppo.max_grad_norm)
@@ -60,17 +54,12 @@ class PPOAgent(nn.Module):
         self.critic_optimizer.step()
         # self.actor_lr_schedule.step()
         # self.critic_lr_schedule.step()
-    
-    def get_value(self, 
-                  env: Env, 
-                  x:torch.Tensor):
+
+    def get_value(self, env: Env, x: torch.Tensor):
         value = self.critic(env, x)
         return value
-    
-    def get_action_and_value(self, 
-                             env: Env,
-                             x:torch.Tensor, 
-                             action:torch.Tensor=None):
+
+    def get_action_and_value(self, env: Env, x: torch.Tensor, action: torch.Tensor = None):
         action_space = env.single_action_space
         value = self.critic(env, x)
         if isinstance(action_space, GymnasiumBox):
@@ -87,17 +76,17 @@ class PPOAgent(nn.Module):
             if action is None:
                 action = dist.sample()
             return action, dist.log_prob(action), dist.entropy(), value
-        
+
     def get_state_dict(self) -> Dict[str, Any]:
         return {
             "actor": self.actor.state_dict(),
             "critic": self.critic.state_dict(),
             "actor_optimizer": self.actor_optimizer.state_dict(),
-            "critic_optimizer": self.critic_optimizer.state_dict(), 
+            "critic_optimizer": self.critic_optimizer.state_dict(),
             # "actor_lr_schedule": self.actor_lr_schedule.state_dict(),
             # "critic_lr_schedule": self.critic_lr_schedule.state_dict(),
         }
-        
+
     def load_state_dict(self, state_dict: Dict[str, Any]):
         self.actor.load_state_dict(state_dict["actor"])
         self.critic.load_state_dict(state_dict["critic"])
@@ -105,7 +94,7 @@ class PPOAgent(nn.Module):
         self.critic_optimizer.load_state_dict(state_dict["critic_optimizer"])
         # self.actor_lr_schedule.load_state_dict(state_dict["actor_lr_schedule"])
         # self.critic_lr_schedule.load_state_dict(state_dict["critic_lr_schedule"])
-        
+
     def load_state_only_weight(self, state_dict: Dict[str, Any]):
         self.actor.load_state_dict(state_dict["actor"])
         self.critic.load_state_dict(state_dict["critic"])
@@ -115,11 +104,11 @@ class PPOAgent(nn.Module):
         state_dict = self.get_state_dict()
         state_dict["update_idx"] = update_idx
         torch.save(state_dict, ckpt_dir / f'{mode}_agent.pt')
-    
+
     def load_checkpoint(self, ckpt_dir, device, mode='pretraining') -> None:
         ckpt_dir = Path(ckpt_dir)
-        state_dict = torch.load(ckpt_dir / f'pretraining_agent.pt', map_location=device)
-        if mode=='pretraining':
+        state_dict = torch.load(ckpt_dir / 'pretraining_agent.pt', map_location=device)
+        if mode == 'pretraining':
             self.load_state_dict(state_dict)
-        elif mode=='finetuning':
+        elif mode == 'finetuning':
             self.load_state_only_weight(state_dict)

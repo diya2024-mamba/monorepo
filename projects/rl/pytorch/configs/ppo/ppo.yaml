@@ -1,5 +1,5 @@
-actor_lr: 0.000001
-critic_lr: 0.000002
+actor_lr: 0.00001
+critic_lr: 0.00002
 anneal_lr: False
 update_epochs: 10 # 10 The number of iteractions of ppo training
 num_minibatches: 8 # 8 The number of minibatches per 1 epoch (Not mibi batch size)
