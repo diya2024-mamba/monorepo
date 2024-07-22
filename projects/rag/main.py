@@ -33,7 +33,7 @@ def file(
 @cli.command()
 def chat(
     config_yaml: Annotated[str, typer.Option(help="config 파일 위치")] = "config_yaml/base.yaml",
-    update: Annotated[bool, typer.Option("--update")] = False,
+    update: Annotated[bool, typer.Option("--update", help="서버에서 임베딩 파일 다운로드")] = False,
 ):
     """챗봇과 대화합니다."""
     config = load_yaml(path=config_yaml)
