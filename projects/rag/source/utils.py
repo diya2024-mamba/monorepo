@@ -13,12 +13,12 @@ def load_env() -> None:
     env_variables = [
         "OPENAI_API_KEY",
         "FILE_SERVER_URI",
+        "FILE_SERVER_USERNAME",
+        "FILE_SERVER_PASSWORD",
     ]
     for var in env_variables:
         if os.environ.get(var) is None:
             raise ValueError(f"Environment variable {var} is not set.")
-
-    os.environ["MLFLOW_EXPERIMENT"] = "rag_artifacts"
 
 
 def load_yaml(path: str) -> dict:
@@ -30,8 +30,8 @@ def load_yaml(path: str) -> dict:
 def list_files() -> list[str]:
     url = os.environ["FILE_SERVER_URI"] + "/files"
     auth = HTTPBasicAuth(
-        "diya2024mamba",
-        "eldi2024akaqk",
+        os.environ["FILE_SERVER_USERNAME"],
+        os.environ["FILE_SERVER_PASSWORD"],
     )
     response = requests.get(url, auth=auth)
     response.raise_for_status()
@@ -52,8 +52,8 @@ def upload_file(path: Path) -> None:
 
     url = os.environ["FILE_SERVER_URI"] + "/upload"
     auth = HTTPBasicAuth(
-        "diya2024mamba",
-        "eldi2024akaqk",
+        os.environ["FILE_SERVER_USERNAME"],
+        os.environ["FILE_SERVER_PASSWORD"],
     )
     for f in files:
         print(f"파일 업로드: {f}")
@@ -66,8 +66,8 @@ def download_file(source: Path, target: Path) -> None:
     print(f"파일 다운로드: {source} -> {target}")
     url = os.environ["FILE_SERVER_URI"] + "/download/" + str(source)
     auth = HTTPBasicAuth(
-        "diya2024mamba",
-        "eldi2024akaqk",
+        os.environ["FILE_SERVER_USERNAME"],
+        os.environ["FILE_SERVER_PASSWORD"],
     )
     response = requests.get(url, auth=auth)
     response.raise_for_status()
