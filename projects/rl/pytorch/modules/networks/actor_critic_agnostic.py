@@ -12,10 +12,20 @@ from modules.networks.mlp import ResidualMLP
 from modules.utils import get_activation
 from omegaconf import OmegaConf
 from torch.distributions import Categorical, Normal
+import math
 
 GymSpace = TypeVar('GymSpace', GymnasiumBox, GymnasiumDiscrete)
 Env = GymnasiumEnv
 
+def positional_encoding(x: torch.Tensor,
+                        d_model:int,
+                        seq_len: int):
+    position = torch.arange(seq_len).unsqueeze(1)
+    div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+    pe = torch.zeros(1, seq_len, d_model).to(x.device)
+    pe[0, :, 0::2] = torch.sin(position * div_term).to(x.device)
+    pe[0:, :, 1::2] = torch.cos(position * div_term).to(x.device)
+    return x + pe
 
 class MambaEncoder(nn.Module):
     def __init__(
@@ -87,7 +97,71 @@ class MambaDecoder(nn.Module):
         output = self.blocks(h)
         return output
 
+class RNNEncoder(nn.Module):
+    def __init__(
+        self,
+        cfg: OmegaConf,
+    ):
+        super().__init__()
+        activation_name: str = cfg.nn.actor_critic.activation
+        self.d_model = cfg.nn.actor_critic.d_model
+        self.act_func: torch.nn.Module = get_activation(activation_name)()
+        self.blocks = nn.Sequential()
+        self.embedding = nn.Linear(1, self.d_model)
+        self.num_layers = cfg.nn.rnn.num_layers
+        self.rnn = nn.GRU(input_size=self.d_model, 
+                          hidden_size=self.d_model,
+                          num_layers=self.num_layers,
+                          bias=True,
+                          batch_first=True,
+                          bidirectional=True
+                          )
+        
+    def forward(self, x):
+        # x: [batch, feature_dim]
+        batch_size = x.size(0)
+        feature_dim = x.size(1)
+        ux = x.unsqueeze(-1)
+        ux = self.embedding(ux)
+        hidden, h_n = self.rnn(ux) # weights shape: [batch_size, feature_dim, 2*d_model]
+        hidden = hidden.reshape(batch_size, feature_dim, 2, self.d_model)
+        hidden = hidden.mean(dim=2, keepdim=False)
+        return hidden
 
+class RNNDecoder(nn.Module):
+    def __init__(
+        self,
+        cfg: OmegaConf,
+    ):
+        super().__init__()
+        activation_name: str = cfg.nn.actor_critic.activation
+        self.d_model = cfg.nn.actor_critic.d_model
+        self.pos_encoding = cfg.nn.actor_critic.pos_encoding
+        self.act_func: torch.nn.Module = get_activation(activation_name)()
+        self.num_layers = cfg.nn.rnn.num_layers
+        self.rnn = nn.GRU(input_size=self.d_model, 
+                          hidden_size=self.d_model,
+                          num_layers=self.num_layers,
+                          bias=True,
+                          batch_first=True,
+                          bidirectional=True
+                          )
+        
+
+    def forward(self, out_dim: int, hidden: torch.Tensor):
+        # x: [batch, out_dim, hidden_dim]
+        batch_size = hidden.size(0)
+        h = hidden.unsqueeze(1)
+        h = h.expand(batch_size, out_dim, self.d_model)
+        if self.pos_encoding:
+            x = positional_encoding(h, self.d_model, out_dim)
+        weights, _ = self.rnn(h) 
+        # weights shape: [batch_size, out_dim, 2*d_model]
+        weights = weights.reshape(batch_size, out_dim, 2, self.d_model)
+        weights = weights.mean(dim=2, keepdim=False)
+        # weights shape: [batch_size, out_dim, d_model]
+        return weights
+    
 class AgnosticBase(nn.Module):
     def __init__(
         self,
@@ -99,7 +173,11 @@ class AgnosticBase(nn.Module):
         self.d_model = cfg.nn.actor_critic.d_model
         activation_name: str = cfg.nn.actor_critic.activation
         self.act_func: torch.nn.Module = get_activation(activation_name)()
-        self.obs_encoder_1d: torch.nn.Module = MambaEncoder(cfg)
+        if cfg.nn.actor_critic.decoder_type == "mamba":
+            Encoder = MambaEncoder
+        elif cfg.nn.actor_critic.decoder_type == "rnn":
+            Encoder = RNNEncoder
+        self.obs_encoder_1d: torch.nn.Module = Encoder(cfg)
         self.input_to_hidden: bool = cfg.nn.actor_critic.input_to_hidden
         self.hidden_to_output: bool = cfg.nn.actor_critic.hidden_to_output
         self.use_mlp: bool = cfg.nn.actor_critic.use_mlp
@@ -121,6 +199,7 @@ class AgnosticBase(nn.Module):
         # x: [batch_size, feature_dim]
         h = self.obs_encoder_1d(x)
         h = self.in_hidden_op(h, dim=1, keepdim=False)
+        h = self.act_func(h)
         if self.use_mlp:
             h = self.act_func(self.res_mlp(h))
         else:
@@ -142,9 +221,13 @@ class AgnosticStochasticActor(AgnosticBase):
         env_list: List[Env],
     ):
         super().__init__(cfg, env_ids, env_list)
-        self.policy_mean_decoder: torch.nn.Module = MambaDecoder(cfg)
-        self.policy_logstd_decoder: torch.nn.Module = MambaDecoder(cfg)
-        self.policy_prob_decoder: torch.nn.Module = MambaDecoder(cfg)
+        if cfg.nn.actor_critic.decoder_type == "mamba":
+            Decoder = MambaDecoder
+        elif cfg.nn.actor_critic.decoder_type == "rnn":
+            Decoder = RNNDecoder
+        self.policy_mean_decoder: torch.nn.Module = Decoder(cfg)
+        self.policy_logstd_decoder: torch.nn.Module = Decoder(cfg)
+        self.policy_prob_decoder: torch.nn.Module = Decoder(cfg)
 
     def decoding(self, action_space: GymSpace, h: torch.Tensor):
         # ? Decoding continuous action
@@ -192,7 +275,11 @@ class AgnosticVNetwork(AgnosticBase):
         env_list: List[Env],
     ):
         super().__init__(cfg, env_ids, env_list)
-        self.value_decoder: torch.nn.Module = MambaDecoder(cfg)
+        if cfg.nn.actor_critic.decoder_type == "mamba":
+            Decoder = MambaDecoder
+        elif cfg.nn.actor_critic.decoder_type == "rnn":
+            Decoder = RNNDecoder
+        self.value_decoder: torch.nn.Module = Decoder(cfg)
 
     def decoding(self, h: torch.Tensor):
         value = self.value_decoder(1, h)
