@@ -2,26 +2,38 @@
 name = "rag"
 version = "0.1.0"
 description = "rag repository requirements"
-authors = ["jjonhwa <jjonhwa@naver.com>"]
+authors = [
+    "jjonhwa",
+    "jun048098",
+    "kyhoon",
+    "Seonu-Lim",
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-transformers = "^4.42.4"
-mesop = "^0.9.4"
-langchain-openai = "^0.1.17"
-langchain-huggingface = "^0.0.3"
-langchain-community = "^0.2.7"
 faiss-cpu = "^1.8.0.post1"
+gunicorn = "^22.0.0"
+langchain-community = "^0.2.7"
+langchain-huggingface = "^0.0.3"
+langchain-openai = "^0.1.17"
+mesop = "^0.9.4"
+rich = "^13.7.1"
+torch = {version = "^2.4.0+cpu", source = "torch"}
+transformers = {extras = ["torch"], version = "^4.43.3"}
 typer = "^0.12.3"
 typing-extensions = "^4.12.2"
-rich = "^13.7.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "24.4.2"
+isort = "5.13.2"
 pre-commit = "^3.7.1"
 ruff = "0.5.4"
-isort = "5.13.2"
+
+[[tool.poetry.source]]
+name = "torch"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "supplemental"
 
 [build-system]
 requires = ["poetry-core"]
