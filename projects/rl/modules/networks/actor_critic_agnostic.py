@@ -55,6 +55,7 @@ class MambaEncoder(nn.Module):
 
     def forward(self, x):
         # x: [batch, feature_dim]
+        breakpoint()
         ux = x.unsqueeze(-1)
         ux = self.embedding(ux)
         hidden = self.blocks(ux)
