@@ -91,7 +91,7 @@ def format_cot_example(example, including_answer=True):
 
 def generate_cot_prompt(val_df, curr, k):
     prompt = ""
-    with open("cot_prompt_lib/initial_prompt.txt", "r") as fi:
+    with open("projects/llm_eval/cot_prompt_lib/initial_prompt.txt", "r") as fi:
         for line in fi.readlines():
             prompt += line
     subject = curr["category"]
