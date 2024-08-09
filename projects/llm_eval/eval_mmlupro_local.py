@@ -43,9 +43,9 @@ def load_mmlu_pro():
     return test_df, val_df
 
 
-def preprocess(test_df):
+def preprocess(df):
     res_df = []
-    for each in test_df:
+    for each in df:
         options = []
         for opt in each["options"]:
             if opt == "N/A":
