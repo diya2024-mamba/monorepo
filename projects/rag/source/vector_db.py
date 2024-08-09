@@ -21,7 +21,6 @@ def kiwi_tokenize(text):
 def kiwi_bm25_db(docs, save_path=None):
     '''bm25 vector store'''
     kiwi_bm25 = BM25Retriever.from_documents(docs, preprocess_func=kiwi_tokenize)
-    print(1)
     if save_path != None:
         with open(save_path, 'wb') as f:
             pickle.dump(kiwi_bm25, f)
@@ -37,7 +36,6 @@ def search_metadata_json(script_id, json_path):
     '''json에서 metadata의 script_id로  검색'''
     with open(json_path, 'r', encoding='utf-8') as f:
         script_json = json.load(f)
-
     return script_json[str(script_id)]
 
 if __name__ == '__main__':
