@@ -1,26 +1,27 @@
+import argparse
 import csv
 import json
-import argparse
-import os
-import torch
-import random
-import transformers
-import time
-# from concurrent.futures import ThreadPoolExecutor
-
-import re
-# from vllm import LLM, SamplingParams
-from tqdm import tqdm
 import logging
+import os
+import random
+import re
 import sys
-from datasets import load_dataset
+import time
+
 import ollama
-from torch.utils.data import DataLoader, Dataset as TorchDataset
+import torch
+from datasets import load_dataset
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset as TorchDataset
+from tqdm import tqdm
+
+# from concurrent.futures import ThreadPoolExecutor
 
 
 choices = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"]
 max_model_length = 4096
 max_new_tokens = 2048
+
 
 class CustomDataset(TorchDataset):
     def __init__(self, dataset):
@@ -33,6 +34,7 @@ class CustomDataset(TorchDataset):
         item = self.dataset[idx]
         return item
 
+
 def load_mmlu_pro():
     dataset = load_dataset("TIGER-Lab/MMLU-Pro")
     test_df, val_df = dataset["test"], dataset["validation"]
@@ -40,15 +42,6 @@ def load_mmlu_pro():
     val_df = preprocess(val_df)
     return test_df, val_df
 
-def load_model():
-    llm = LLM(model=args.model, gpu_memory_utilization=float(args.gpu_util),
-                tensor_parallel_size=torch.cuda.device_count(),
-                max_model_len=max_model_length,
-                trust_remote_code=True)
-    sampling_params = SamplingParams(temperature=0, max_tokens=max_new_tokens,
-                                        stop=["Question:"])
-    tokenizer = transformers.AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
-    return (llm, sampling_params), tokenizer
 
 def preprocess(test_df):
     res_df = []
@@ -87,8 +80,9 @@ def format_cot_example(example, including_answer=True):
     for i, opt in enumerate(options):
         prompt += "{}. {}\n".format(choices[i], opt)
     if including_answer:
-        cot_content = example["cot_content"].replace("A: Let's think step by step.",
-                                                     "Answer: Let's think step by step.")
+        cot_content = example["cot_content"].replace(
+            "A: Let's think step by step.", "Answer: Let's think step by step."
+        )
         prompt += cot_content + "\n\n"
     else:
         prompt += "Answer: Let's think step by step."
@@ -97,12 +91,12 @@ def format_cot_example(example, including_answer=True):
 
 def generate_cot_prompt(val_df, curr, k):
     prompt = ""
-    with open(f"cot_prompt_lib/initial_prompt.txt", "r") as fi:
+    with open("cot_prompt_lib/initial_prompt.txt", "r") as fi:
         for line in fi.readlines():
             prompt += line
     subject = curr["category"]
     val_df = select_by_category(val_df, subject)
-    val_df = val_df[: k]
+    val_df = val_df[:k]
     prompt = prompt.replace("{$}", subject) + "\n"
     for example in val_df:
         prompt += format_cot_example(example, including_answer=True)
@@ -137,30 +131,16 @@ def extract_final(text):
         return None
 
 
-def batch_inference(llm, sampling_params, inference_batch):
-    start = time.time()
-    outputs = llm.generate(inference_batch, sampling_params)
-    logging.info(str(len(inference_batch)) + "size batch costing time: " + str(time.time() - start))
-    response_batch = []
-    pred_batch = []
-    for output in outputs:
-        generated_text = output.outputs[0].text
-        response_batch.append(generated_text)
-        pred = extract_answer(generated_text)
-        pred_batch.append(pred)
-    return pred_batch, response_batch
-
 def make_response(prompt):
-    response = ollama.generate(model='llama3.1',
-                prompt=prompt)
+    response = ollama.generate(model='llama3.1', prompt=prompt)
     return response['response']
+
 
 def batch_inference_ollama(inference_batch):
     start = time.time()
     outputs = []
     for data in inference_batch:
-        response = ollama.generate(model='llama3.1',
-                prompt=data)
+        response = ollama.generate(model='llama3.1', prompt=data)
         outputs.append(response['response'])
     logging.info(str(len(inference_batch)) + "size batch costing time: " + str(time.time() - start))
     response_batch = []
@@ -170,6 +150,7 @@ def batch_inference_ollama(inference_batch):
         pred = extract_answer(generated_text)
         pred_batch.append(pred)
     return pred_batch, response_batch
+
 
 def save_res(res, output_path):
     accu, corr, wrong = 0.0, 0.0, 0.0
@@ -203,15 +184,13 @@ def eval_cot(args, subject, val_df, test_df, output_path, save_middle):
     for i in tqdm(range(len(test_df))):
         k = args.ntrain
         curr = test_df[i]
-        prompt_length_ok = False
         prompt = None
-        # while not prompt_length_ok:
         prompt = generate_cot_prompt(val_df, curr, k)
         inference_batches.append(prompt)
 
     custom_dataset = CustomDataset(inference_batches)
     dataloader = iter(DataLoader(custom_dataset, batch_size=args.batch_size, shuffle=False))
-    
+
     pred_batch, response_batch = [], []
     for datas in tqdm(dataloader):
         preds, response = batch_inference_ollama(datas)
@@ -223,11 +202,10 @@ def eval_cot(args, subject, val_df, test_df, output_path, save_middle):
             data.extend(response)
             f.seek(0)
             json.dump(data, f, ensure_ascii=False, indent=4)
-        
+
     # pred_batch, response_batch = batch_inference_ollama(inference_batches)
     res = []
     for j, curr in enumerate(test_df):
-
         curr["pred"] = pred_batch[j]
         curr["model_outputs"] = response_batch[j]
         res.append(curr)
@@ -283,7 +261,7 @@ def main():
         with open(os.path.join(summary_path), 'a') as f:
             f.write("Average accuracy {:.4f} - {}\n".format(sta_dict[subject]["accu"], subject))
     total_corr, total_wrong = 0.0, 0.0
-    for k, v in sta_dict.items():
+    for _k, v in sta_dict.items():
         total_corr += v["corr"]
         total_wrong += v["wrong"]
     total_accu = total_corr / (total_corr + total_wrong + 0.000001)
@@ -304,8 +282,7 @@ if __name__ == "__main__":
     parser.add_argument("--ntrain", "-k", type=int, default=5)
     parser.add_argument("--selected_subjects", "-sub", type=str, default="all")
     parser.add_argument("--save_dir", "-s", type=str, default="results")
-    parser.add_argument("--global_record_file", "-grf", type=str,
-                        default="eval_record_collection.csv")
+    parser.add_argument("--global_record_file", "-grf", type=str, default="eval_record_collection.csv")
     parser.add_argument("--gpu_util", "-gu", type=str, default="0.8")
     parser.add_argument("--model", "-m", type=str, default="meta-llama/Llama-2-7b-hf")
     parser.add_argument("--batch_size", "-b", type=str, default=4)
@@ -313,9 +290,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     os.makedirs(args.save_dir, exist_ok=True)
     global_record_file = args.global_record_file
-    save_result_dir = os.path.join(
-        args.save_dir, "/".join(args_generate_path(args))
-    )
+    save_result_dir = os.path.join(args.save_dir, "/".join(args_generate_path(args)))
     file_prefix = "-".join(args_generate_path(args))
     timestamp = time.time()
     time_str = time.strftime('%m-%d_%H-%M', time.localtime(timestamp))
@@ -325,10 +300,13 @@ if __name__ == "__main__":
     os.makedirs(save_result_dir, exist_ok=True)
     save_log_dir = os.path.join(args.save_dir, "log")
     os.makedirs(save_log_dir, exist_ok=True)
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s',
-                        handlers=[logging.FileHandler(os.path.join(save_log_dir,
-                                                                   file_name.replace("_summary.txt",
-                                                                                     "_logfile.log"))),
-                                  logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s %(levelname)s %(message)s',
+        handlers=[
+            logging.FileHandler(os.path.join(save_log_dir, file_name.replace("_summary.txt", "_logfile.log"))),
+            logging.StreamHandler(sys.stdout),
+        ],
+    )
 
     main()
