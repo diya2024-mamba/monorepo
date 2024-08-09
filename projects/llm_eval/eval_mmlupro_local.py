@@ -184,7 +184,6 @@ def eval_cot(args, subject, val_df, test_df, output_path, save_middle):
     for i in tqdm(range(len(test_df))):
         k = args.ntrain
         curr = test_df[i]
-        prompt = None
         prompt = generate_cot_prompt(val_df, curr, k)
         inference_batches.append(prompt)
 
