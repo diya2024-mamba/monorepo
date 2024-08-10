@@ -10,11 +10,10 @@ from langchain_openai import OpenAIEmbeddings
 
 from dotenv import load_dotenv
 load_dotenv()
-
+kiwi = Kiwi()
 
 def kiwi_tokenize(text):
-    '''형태소 분석기로 토크나이징'''        
-    kiwi = Kiwi()
+    '''형태소 분석기로 토크나이징'''            
     return [token.form for token in kiwi.tokenize(text)]
 
 
@@ -43,6 +42,7 @@ if __name__ == '__main__':
     # faiss
     faiss_db = FAISS.from_documents(doc, OpenAIEmbeddings(model="text-embedding-3-large"))
     faiss_db.save_local("../db/ko_faiss_base")
-    
+    # BM_25
+    kiwi_bm25_db(doc, '../db/ko_bm25_base.pkl')
 
     
