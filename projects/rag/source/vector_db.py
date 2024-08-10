@@ -26,6 +26,12 @@ def kiwi_bm25_db(docs, save_path=None):
     return kiwi_bm25
 
 
+def load_kiwi_bm25_db(path):
+    '''ex) path = db/ko_bm25_base.pkl'''
+    with open(path, 'rb') as bm25result_file:
+        return pickle.load(bm25result_file)
+
+
 def search_metadata_faiss(db, key, value):
     '''faiss db에서 metadata의 key로 value 검색'''
     return dict(filter(lambda v : v[1].metadata[key]==value, db.docstore._dict.items()))
@@ -36,6 +42,7 @@ def search_metadata_json(script_id, json_path):
     with open(json_path, 'r', encoding='utf-8') as f:
         script_json = json.load(f)
     return script_json[str(script_id)]
+
 
 if __name__ == '__main__':
     doc = preprocess_metadata('../data/ko_script.txt')
