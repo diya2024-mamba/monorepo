@@ -14,18 +14,20 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 @hydra.main(version_base=None, config_path="./configs", config_name="trainer")
 def main(cfg: OmegaConf):
     pprint.pprint(cfg)
-    print(f'CUDA is available: {torch.cuda.is_available()}')
-    print(f'Number of devices: {torch.cuda.device_count()}')
-    architecture = 'specific' if cfg.nn.env_specific_enc_dec else 'agnostic'  # agnostic or specific
+    print(f"CUDA is available: {torch.cuda.is_available()}")
+    print(f"Number of devices: {torch.cuda.device_count()}")
+    architecture = (
+        "specific" if cfg.nn.env_specific_enc_dec else "agnostic"
+    )  # agnostic or specific
     wandb_name = (
-        'PPO'
-        + '_'
+        "PPO"
+        + "_"
         + architecture
-        + '_'
+        + "_"
         + str(cfg.experiment.seed)
-        + '_'
+        + "_"
         + str(cfg.experiment.finetuning_type)
-        + '_'
+        + "_"
         + str(cfg.nn.actor_critic.d_model)
     )
 

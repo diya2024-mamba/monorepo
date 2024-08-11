@@ -14,12 +14,14 @@ from modules.networks.actor_critic_agnostic import (
 from modules.networks.actor_critic_specific import SpecificActor, SpecificVNetwork
 from omegaconf import OmegaConf
 
-GymSpace = TypeVar('GymSpace', GymnasiumBox, GymnasiumDiscrete)
+GymSpace = TypeVar("GymSpace", GymnasiumBox, GymnasiumDiscrete)
 Env = GymnasiumEnv
 
 
 class PPOAgent(nn.Module):
-    def __init__(self, cfg: OmegaConf, env_ids: List[str], env_list, mode='pretraining'):
+    def __init__(
+        self, cfg: OmegaConf, env_ids: List[str], env_list, mode="pretraining"
+    ):
         super().__init__()
         self.cfg = cfg
         self.mode = mode
@@ -48,8 +50,12 @@ class PPOAgent(nn.Module):
 
     def optim_step(self):
         if self.use_grad_clip:
-            nn.utils.clip_grad_norm_(self.actor.parameters(), self.cfg.ppo.max_grad_norm)
-            nn.utils.clip_grad_norm_(self.critic.parameters(), self.cfg.ppo.max_grad_norm)
+            nn.utils.clip_grad_norm_(
+                self.actor.parameters(), self.cfg.ppo.max_grad_norm
+            )
+            nn.utils.clip_grad_norm_(
+                self.critic.parameters(), self.cfg.ppo.max_grad_norm
+            )
         self.actor_optimizer.step()
         self.critic_optimizer.step()
         # self.actor_lr_schedule.step()
@@ -59,7 +65,9 @@ class PPOAgent(nn.Module):
         value = self.critic(env, x)
         return value
 
-    def get_action_and_value(self, env: Env, x: torch.Tensor, action: torch.Tensor = None):
+    def get_action_and_value(
+        self, env: Env, x: torch.Tensor, action: torch.Tensor = None
+    ):
         action_space = env.single_action_space
         value = self.critic(env, x)
         if isinstance(action_space, GymnasiumBox):
@@ -99,16 +107,16 @@ class PPOAgent(nn.Module):
         self.actor.load_state_dict(state_dict["actor"])
         self.critic.load_state_dict(state_dict["critic"])
 
-    def save_checkpoint(self, ckpt_dir, update_idx, mode='pretraining') -> None:
+    def save_checkpoint(self, ckpt_dir, update_idx, mode="pretraining") -> None:
         ckpt_dir.mkdir(exist_ok=True, parents=False)
         state_dict = self.get_state_dict()
         state_dict["update_idx"] = update_idx
-        torch.save(state_dict, ckpt_dir / f'{mode}_agent.pt')
+        torch.save(state_dict, ckpt_dir / f"{mode}_agent.pt")
 
-    def load_checkpoint(self, ckpt_dir, device, mode='pretraining') -> None:
+    def load_checkpoint(self, ckpt_dir, device, mode="pretraining") -> None:
         ckpt_dir = Path(ckpt_dir)
-        state_dict = torch.load(ckpt_dir / 'pretraining_agent.pt', map_location=device)
-        if mode == 'pretraining':
+        state_dict = torch.load(ckpt_dir / "pretraining_agent.pt", map_location=device)
+        if mode == "pretraining":
             self.load_state_dict(state_dict)
-        elif mode == 'finetuning':
+        elif mode == "finetuning":
             self.load_state_only_weight(state_dict)

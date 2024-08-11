@@ -14,7 +14,7 @@ from modules.utils import get_activation
 from omegaconf import OmegaConf
 from torch.distributions import Categorical, Normal
 
-GymSpace = TypeVar('GymSpace', GymnasiumBox, GymnasiumDiscrete)
+GymSpace = TypeVar("GymSpace", GymnasiumBox, GymnasiumDiscrete)
 Env = GymnasiumEnv
 
 
@@ -125,7 +125,9 @@ class RNNEncoder(nn.Module):
         feature_dim = x.size(1)
         ux = x.unsqueeze(-1)
         ux = self.embedding(ux)
-        hidden, h_n = self.rnn(ux)  # weights shape: [batch_size, feature_dim, 2*d_model]
+        hidden, h_n = self.rnn(
+            ux
+        )  # weights shape: [batch_size, feature_dim, 2*d_model]
         hidden = hidden.reshape(batch_size, feature_dim, 2, self.d_model)
         hidden = hidden.mean(dim=2, keepdim=False)
         return hidden
@@ -242,8 +244,12 @@ class AgnosticStochasticActor(AgnosticBase):
             self.a_mean_weights = a_mean
             self.a_logstd_weights = a_logstd
             # a_mean, a_logstd: [batch_size, act_dim, d_model]
-            a_mu = self.out_hidden_op(a_mean, dim=2, keepdim=False)  # out: [batch_size, act_dim]
-            a_logstd = self.out_hidden_op(a_logstd, dim=2, keepdim=False)  # out: [batch_size, act_dim]
+            a_mu = self.out_hidden_op(
+                a_mean, dim=2, keepdim=False
+            )  # out: [batch_size, act_dim]
+            a_logstd = self.out_hidden_op(
+                a_logstd, dim=2, keepdim=False
+            )  # out: [batch_size, act_dim]
             actor_std = F.softplus(a_logstd)
             dist = Normal(a_mu, actor_std)
             return dist, a_mu
@@ -385,10 +391,14 @@ class AgnosticContinuousTwinQ(nn.Module):
         self.cq1 = AgnosticContinuousQNetwork(cfg, env_ids, env_list)
         self.cq2 = AgnosticContinuousQNetwork(cfg, env_ids, env_list)
 
-    def both(self, env: Env, s: torch.Tensor, a: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def both(
+        self, env: Env, s: torch.Tensor, a: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         return self.cq1(env, s, a), self.cq2(env, s, a)
 
-    def forward(self, env: Env, s: torch.Tensor, a: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, env: Env, s: torch.Tensor, a: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         return torch.min(*self.both(env, s, a))
 
 

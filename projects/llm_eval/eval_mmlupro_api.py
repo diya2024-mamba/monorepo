@@ -59,13 +59,21 @@ def get_client():
         )
     else:
         client = None
-        print("For other model API calls, please implement the client definition method yourself.")
+        print(
+            "For other model API calls, please implement the client definition method yourself."
+        )
     return client
 
 
 def call_api(client, instruction, inputs):
     start = time.time()
-    if args.model_name in ["gpt-4", "gpt-4o", "gpt-4o-mini", "deepseek-chat", "deepseek-coder"]:
+    if args.model_name in [
+        "gpt-4",
+        "gpt-4o",
+        "gpt-4o-mini",
+        "deepseek-chat",
+        "deepseek-coder",
+    ]:
         message_text = [{"role": "user", "content": instruction + inputs}]
         completion = client.chat.completions.create(
             model=args.model_name,
@@ -92,7 +100,9 @@ def call_api(client, instruction, inputs):
         )
         result = message.content[0].text
     else:
-        print("For other model API calls, please implement the request method yourself.")
+        print(
+            "For other model API calls, please implement the request method yourself."
+        )
         result = None
     print("cost time", time.time() - start)
     return result
@@ -151,7 +161,7 @@ def extract_answer(text):
 
 
 def extract_again(text):
-    match = re.search(r'.*[aA]nswer:\s*([A-J])', text)
+    match = re.search(r".*[aA]nswer:\s*([A-J])", text)
     if match:
         return match.group(1)
     else:
@@ -171,7 +181,10 @@ def single_request(client, single_question, cot_examples_dict, exist_result):
     exist = True
     q_id = single_question["question_id"]
     for each in exist_result:
-        if q_id == each["question_id"] and single_question["question"] == each["question"]:
+        if (
+            q_id == each["question_id"]
+            and single_question["question"] == each["question"]
+        ):
             pred = extract_answer(each["model_outputs"])
             return pred, each["model_outputs"], exist
     exist = False
@@ -181,7 +194,9 @@ def single_request(client, single_question, cot_examples_dict, exist_result):
     options = single_question["options"]
     prompt = (
         "The following are multiple choice questions (with answers) about {}. Think step by"
-        " step and then output the answer in the format of \"The answer is (X)\" at the end.\n\n".format(category)
+        ' step and then output the answer in the format of "The answer is (X)" at the end.\n\n'.format(
+            category
+        )
     )
     for each in cot_examples:
         prompt += format_example(each["question"], each["options"], each["cot_content"])
@@ -232,7 +247,10 @@ def update_result(output_res_path):
 def merge_result(res, curr):
     merged = False
     for i, single in enumerate(res):
-        if single["question_id"] == curr["question_id"] and single["question"] == curr["question"]:
+        if (
+            single["question_id"] == curr["question_id"]
+            and single["question"] == curr["question"]
+        ):
             res[i] = curr
             merged = True
     if not merged:
@@ -311,7 +329,9 @@ def save_summary(category_record, output_summary_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output_dir", "-o", type=str, default="projects/llm_eval/eval_results_api/")
+    parser.add_argument(
+        "--output_dir", "-o", type=str, default="projects/llm_eval/eval_results_api/"
+    )
     parser.add_argument(
         "--model_name",
         "-m",

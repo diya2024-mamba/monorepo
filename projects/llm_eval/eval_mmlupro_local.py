@@ -18,7 +18,24 @@ from tqdm import tqdm
 # from concurrent.futures import ThreadPoolExecutor
 
 
-choices = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"]
+choices = [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+]
 max_model_length = 4096
 max_new_tokens = 2048
 
@@ -115,7 +132,7 @@ def extract_answer(text):
 
 
 def extract_again(text):
-    match = re.search(r'.*[aA]nswer:\s*([A-J])', text)
+    match = re.search(r".*[aA]nswer:\s*([A-J])", text)
     if match:
         return match.group(1)
     else:
@@ -132,17 +149,21 @@ def extract_final(text):
 
 
 def make_response(prompt):
-    response = ollama.generate(model='llama3.1', prompt=prompt)
-    return response['response']
+    response = ollama.generate(model="llama3.1", prompt=prompt)
+    return response["response"]
 
 
 def batch_inference_ollama(inference_batch):
     start = time.time()
     outputs = []
     for data in inference_batch:
-        response = ollama.generate(model='llama3.1', prompt=data)
-        outputs.append(response['response'])
-    logging.info(str(len(inference_batch)) + "size batch costing time: " + str(time.time() - start))
+        response = ollama.generate(model="llama3.1", prompt=data)
+        outputs.append(response["response"])
+    logging.info(
+        str(len(inference_batch))
+        + "size batch costing time: "
+        + str(time.time() - start)
+    )
     response_batch = []
     pred_batch = []
     for generated_text in outputs:
@@ -188,7 +209,9 @@ def eval_cot(args, subject, val_df, test_df, output_path, save_middle):
         inference_batches.append(prompt)
 
     custom_dataset = CustomDataset(inference_batches)
-    dataloader = iter(DataLoader(custom_dataset, batch_size=args.batch_size, shuffle=False))
+    dataloader = iter(
+        DataLoader(custom_dataset, batch_size=args.batch_size, shuffle=False)
+    )
 
     pred_batch, response_batch = [], []
     for datas in tqdm(dataloader):
@@ -196,7 +219,7 @@ def eval_cot(args, subject, val_df, test_df, output_path, save_middle):
         pred_batch.extend(preds)
         response_batch.extend(response)
 
-        with open(save_middle, 'r+', encoding='utf-8') as f:
+        with open(save_middle, "r+", encoding="utf-8") as f:
             data = json.load(f)
             data.extend(response)
             f.seek(0)
@@ -209,7 +232,11 @@ def eval_cot(args, subject, val_df, test_df, output_path, save_middle):
         curr["model_outputs"] = response_batch[j]
         res.append(curr)
     accu, corr, wrong = save_res(res, output_path)
-    logging.info("this batch accu is: {}, corr: {}, wrong: {}\n".format(str(accu), str(corr), str(wrong)))
+    logging.info(
+        "this batch accu is: {}, corr: {}, wrong: {}\n".format(
+            str(accu), str(corr), str(wrong)
+        )
+    )
 
     accu, corr, wrong = save_res(res, output_path)
     return accu, corr, wrong
@@ -238,27 +265,33 @@ def main():
     print("selected subjects:\n" + "\n".join(selected_subjects))
     sta_dict = {}
     selected_subjects = sorted(selected_subjects)
-    with open(os.path.join(summary_path), 'a') as f:
+    with open(os.path.join(summary_path), "a") as f:
         f.write("\n------category level sta------\n")
     for subject in selected_subjects:
         if subject not in sta_dict:
             sta_dict[subject] = {"corr": 0.0, "wrong": 0.0, "accu": 0.0}
 
             # save inference
-            os.makedirs('./data', exist_ok=True)
-            json_file_path = f'./data/{args.model}_{subject}.json'
-            with open(json_file_path, 'w', encoding='utf-8') as f:
+            os.makedirs("./data", exist_ok=True)
+            json_file_path = f"./data/{args.model}_{subject}.json"
+            with open(json_file_path, "w", encoding="utf-8") as f:
                 json.dump([], f)
 
         test_df = select_by_category(full_test_df, subject)
         val_df = select_by_category(full_val_df, subject)
         output_path = os.path.join(save_result_dir, "{}.json".format(subject))
-        acc, corr_count, wrong_count = eval_cot(args, subject, val_df, test_df, output_path, json_file_path)
+        acc, corr_count, wrong_count = eval_cot(
+            args, subject, val_df, test_df, output_path, json_file_path
+        )
         sta_dict[subject]["corr"] = corr_count
         sta_dict[subject]["wrong"] = wrong_count
         sta_dict[subject]["accu"] = acc
-        with open(os.path.join(summary_path), 'a') as f:
-            f.write("Average accuracy {:.4f} - {}\n".format(sta_dict[subject]["accu"], subject))
+        with open(os.path.join(summary_path), "a") as f:
+            f.write(
+                "Average accuracy {:.4f} - {}\n".format(
+                    sta_dict[subject]["accu"], subject
+                )
+            )
     total_corr, total_wrong = 0.0, 0.0
     for _k, v in sta_dict.items():
         total_corr += v["corr"]
@@ -266,11 +299,11 @@ def main():
     total_accu = total_corr / (total_corr + total_wrong + 0.000001)
     sta_dict["total"] = {"corr": total_corr, "wrong": total_wrong, "accu": total_accu}
 
-    with open(os.path.join(summary_path), 'a') as f:
+    with open(os.path.join(summary_path), "a") as f:
         f.write("\n------average acc sta------\n")
         weighted_acc = total_accu
         f.write("Average accuracy: {:.4f}\n".format(weighted_acc))
-    with open(global_record_file, 'a', newline='') as file:
+    with open(global_record_file, "a", newline="") as file:
         writer = csv.writer(file)
         record = args_generate_path(args) + [time_str, weighted_acc]
         writer.writerow(record)
@@ -281,7 +314,9 @@ if __name__ == "__main__":
     parser.add_argument("--ntrain", "-k", type=int, default=5)
     parser.add_argument("--selected_subjects", "-sub", type=str, default="all")
     parser.add_argument("--save_dir", "-s", type=str, default="results")
-    parser.add_argument("--global_record_file", "-grf", type=str, default="eval_record_collection.csv")
+    parser.add_argument(
+        "--global_record_file", "-grf", type=str, default="eval_record_collection.csv"
+    )
     parser.add_argument("--gpu_util", "-gu", type=str, default="0.8")
     parser.add_argument("--model", "-m", type=str, default="meta-llama/Llama-2-7b-hf")
     parser.add_argument("--batch_size", "-b", type=str, default=4)
@@ -292,7 +327,7 @@ if __name__ == "__main__":
     save_result_dir = os.path.join(args.save_dir, "/".join(args_generate_path(args)))
     file_prefix = "-".join(args_generate_path(args))
     timestamp = time.time()
-    time_str = time.strftime('%m-%d_%H-%M', time.localtime(timestamp))
+    time_str = time.strftime("%m-%d_%H-%M", time.localtime(timestamp))
     file_name = f"{file_prefix}_{time_str}_summary.txt"
     summary_path = os.path.join(args.save_dir, "summary", file_name)
     os.makedirs(os.path.join(args.save_dir, "summary"), exist_ok=True)
@@ -301,9 +336,13 @@ if __name__ == "__main__":
     os.makedirs(save_log_dir, exist_ok=True)
     logging.basicConfig(
         level=logging.DEBUG,
-        format='%(asctime)s %(levelname)s %(message)s',
+        format="%(asctime)s %(levelname)s %(message)s",
         handlers=[
-            logging.FileHandler(os.path.join(save_log_dir, file_name.replace("_summary.txt", "_logfile.log"))),
+            logging.FileHandler(
+                os.path.join(
+                    save_log_dir, file_name.replace("_summary.txt", "_logfile.log")
+                )
+            ),
             logging.StreamHandler(sys.stdout),
         ],
     )

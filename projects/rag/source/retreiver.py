@@ -4,7 +4,7 @@ from langchain_openai import OpenAIEmbeddings
 
 def script_retriever(embedding_type, embedding_model, db, query):
     """Retriver를 활용하여 사용자 질문과 가장 유사한 대본을 반환한다."""
-    if embedding_type == 'huggingface':
+    if embedding_type == "huggingface":
         pass
         # None
         # embeddings = huggingface

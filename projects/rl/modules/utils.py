@@ -22,55 +22,57 @@ def set_seed(seed: int):
 
 
 gym_envs = [
-    'CartPole-v1',
-    'MountainCar-v0',
-    'MountainCarContinuous-v0',
-    'Pendulum-v1',
-    'Acrobot-v1',
-    'BipedalWalker-v3',
-    'BipedalWalkerHardcore-v3',
-    'LunarLander-v2',
-    'LunarLanderContinuous-v2',
+    "CartPole-v1",
+    "MountainCar-v0",
+    "MountainCarContinuous-v0",
+    "Pendulum-v1",
+    "Acrobot-v1",
+    "BipedalWalker-v3",
+    "BipedalWalkerHardcore-v3",
+    "LunarLander-v2",
+    "LunarLanderContinuous-v2",
 ]
 
 mujoco_envs = [
-    'Ant-v4',
-    'HalfCheetah-v4',
-    'Hopper-v4',
-    'InvertedDoublePendulum-v4',
-    'InvertedPendulum-v4',
-    'Humanoid-v4',
-    'HumanoidStandup-v4',
-    'Pusher-v4',
-    'Reacher-v4',
-    'Swimmer-v4',
-    'Walker2d-v4',
+    "Ant-v4",
+    "HalfCheetah-v4",
+    "Hopper-v4",
+    "InvertedDoublePendulum-v4",
+    "InvertedPendulum-v4",
+    "Humanoid-v4",
+    "HumanoidStandup-v4",
+    "Pusher-v4",
+    "Reacher-v4",
+    "Swimmer-v4",
+    "Walker2d-v4",
 ]
 
 
 def get_activation(activation_name: str):
-    if activation_name == 'tanh':
+    if activation_name == "tanh":
         activation = nn.Tanh
-    elif activation_name == 'relu':
+    elif activation_name == "relu":
         activation = nn.ReLU
-    elif activation_name == 'leakyrelu':
+    elif activation_name == "leakyrelu":
         activation = nn.LeakyReLU
     elif activation_name == "prelu":
         activation = nn.PReLU
-    elif activation_name == 'gelu':
+    elif activation_name == "gelu":
         activation = nn.GELU
-    elif activation_name == 'sigmoid':
+    elif activation_name == "sigmoid":
         activation = nn.Sigmoid
-    elif activation_name in [None, 'id', 'identity', 'linear', 'none']:
+    elif activation_name in [None, "id", "identity", "linear", "none"]:
         activation = nn.Identity
-    elif activation_name == 'elu':
+    elif activation_name == "elu":
         activation = nn.ELU
-    elif activation_name in ['swish', 'silu']:
+    elif activation_name in ["swish", "silu"]:
         activation = nn.SiLU
-    elif activation_name == 'softplus':
+    elif activation_name == "softplus":
         activation = nn.Softplus
     else:
-        raise NotImplementedError("hidden activation '{}' is not implemented".format(activation_name))
+        raise NotImplementedError(
+            "hidden activation '{}' is not implemented".format(activation_name)
+        )
     return activation
 
 
@@ -93,7 +95,9 @@ class RunningMeanStd:
         )
 
 
-def update_mean_var_count_from_moments(mean, var, count, batch_mean, batch_var, batch_count):
+def update_mean_var_count_from_moments(
+    mean, var, count, batch_mean, batch_var, batch_count
+):
     delta = batch_mean - mean
     tot_count = count + batch_count
     new_mean = mean + delta * batch_count / tot_count
@@ -161,7 +165,9 @@ class GymnasiumNormalizedFlattenRecordEpisodeStatistics(gym.Wrapper):
             self.observation_space = GymnasiumBox(low=lows, high=highs)
             # print("observation is changed")
         self.observation_space = GymnasiumBox(
-            low=env.observation_space.low, high=env.observation_space.high, shape=env.observation_space._shape
+            low=env.observation_space.low,
+            high=env.observation_space.high,
+            shape=env.observation_space._shape,
         )
         print(f"gymnasium env observation space: {env.observation_space}")
         print(f"gymnasium env observation space type: {type(env.observation_space)}")
@@ -173,7 +179,9 @@ class GymnasiumNormalizedFlattenRecordEpisodeStatistics(gym.Wrapper):
         self.num_envs = getattr(env, "num_envs", 1)
         self.episode_returns = None
         self.episode_lengths = None
-        self.obs_rms = RunningMeanStd(shape=(self.num_envs, *self.observation_space.shape))
+        self.obs_rms = RunningMeanStd(
+            shape=(self.num_envs, *self.observation_space.shape)
+        )
         self.return_rms = RunningMeanStd(shape=(self.num_envs,))
         self.gamma = 0.98
         self.epsilon = 1e-8
@@ -283,7 +291,9 @@ class GymNormalizedFlattenRecordEpisodeStatistics(gym.Wrapper):
         self.num_envs = getattr(env, "num_envs", 1)
         self.episode_returns = None
         self.episode_lengths = None
-        self.obs_rms = RunningMeanStd(shape=(self.num_envs, *self.observation_space.shape))
+        self.obs_rms = RunningMeanStd(
+            shape=(self.num_envs, *self.observation_space.shape)
+        )
         self.return_rms = RunningMeanStd(shape=(self.num_envs,))
         self.gamma = 0.98
         self.epsilon = 1e-8

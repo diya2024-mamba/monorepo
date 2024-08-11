@@ -18,13 +18,13 @@ from omegaconf import OmegaConf, open_dict
 from tensordict.tensordict import TensorDict
 from torch.utils.tensorboard import SummaryWriter
 
-GymSpace = TypeVar('GymSpace', GymnasiumBox, GymnasiumDiscrete)
+GymSpace = TypeVar("GymSpace", GymnasiumBox, GymnasiumDiscrete)
 Env = GymnasiumEnv
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
@@ -40,7 +40,9 @@ class PPOTrainer:
         self.ckpt_dir = Path(cfg.paths.checkpoints)
         self.ckpt_dir.mkdir(exist_ok=True, parents=False)
         shutil.copytree(
-            src=(Path(hydra.utils.get_original_cwd()) / "modules"), dst=self.output_dir + "/modules", dirs_exist_ok=True
+            src=(Path(hydra.utils.get_original_cwd()) / "modules"),
+            dst=self.output_dir + "/modules",
+            dirs_exist_ok=True,
         )
 
         if cfg.experiment.resume:
@@ -53,13 +55,15 @@ class PPOTrainer:
         with open_dict(cfg):
             cfg.ppo.batch_size = batch_size
             cfg.ppo.minibatch_size = minibatch_size
-            self.batch_size = int(exp_cfg.num_envs * exp_cfg.num_rollout_steps)  # 64 * 512
+            self.batch_size = int(
+                exp_cfg.num_envs * exp_cfg.num_rollout_steps
+            )  # 64 * 512
             self.minibatch_size = int(self.batch_size // cfg.ppo.num_minibatches)
         print(f"train batch_size: {self.batch_size}")
         print(f"train minibatch_size: {self.minibatch_size}")
 
         # * logger
-        file_handler = logging.FileHandler(Path(cfg.paths.dir) / 'log.txt')
+        file_handler = logging.FileHandler(Path(cfg.paths.dir) / "log.txt")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
@@ -81,20 +85,32 @@ class PPOTrainer:
         device,
     ):
         exp_cfg = self.cfg.experiment
-        envs_storages = TensorDict({}, batch_size=[exp_cfg.num_rollout_steps, exp_cfg.num_envs])
+        envs_storages = TensorDict(
+            {}, batch_size=[exp_cfg.num_rollout_steps, exp_cfg.num_envs]
+        )
         exp_cfg = self.cfg.experiment
         for i, env in enumerate(env_list):
             env_id = env_ids[i]
-            obs = torch.zeros((exp_cfg.num_rollout_steps, exp_cfg.num_envs) + env.single_observation_space.shape).to(
+            obs = torch.zeros(
+                (exp_cfg.num_rollout_steps, exp_cfg.num_envs)
+                + env.single_observation_space.shape
+            ).to(device)
+            actions = torch.zeros(
+                (exp_cfg.num_rollout_steps, exp_cfg.num_envs)
+                + env.single_action_space.shape
+            ).to(device)
+            logprobs = torch.zeros((exp_cfg.num_rollout_steps, exp_cfg.num_envs)).to(
                 device
             )
-            actions = torch.zeros((exp_cfg.num_rollout_steps, exp_cfg.num_envs) + env.single_action_space.shape).to(
+            rewards = torch.zeros((exp_cfg.num_rollout_steps, exp_cfg.num_envs)).to(
                 device
             )
-            logprobs = torch.zeros((exp_cfg.num_rollout_steps, exp_cfg.num_envs)).to(device)
-            rewards = torch.zeros((exp_cfg.num_rollout_steps, exp_cfg.num_envs)).to(device)
-            dones = torch.zeros((exp_cfg.num_rollout_steps, exp_cfg.num_envs)).to(device)
-            values = torch.zeros((exp_cfg.num_rollout_steps, exp_cfg.num_envs)).to(device)
+            dones = torch.zeros((exp_cfg.num_rollout_steps, exp_cfg.num_envs)).to(
+                device
+            )
+            values = torch.zeros((exp_cfg.num_rollout_steps, exp_cfg.num_envs)).to(
+                device
+            )
             storage = TensorDict(
                 {
                     "obs": obs,
@@ -118,7 +134,7 @@ class PPOTrainer:
         env_list: List[Env],
         agent,
         device,
-        mode='pretraining',
+        mode="pretraining",
     ):
         cfg = self.cfg
         exp_cfg = cfg.experiment
@@ -146,7 +162,9 @@ class PPOTrainer:
         start_update_idx = 1
         if self.cfg.experiment.save_ckpt:
             interval_size = int(total_num_updates / exp_cfg.num_checkpoints)
-            intervals = np.arange(interval_size, total_num_updates + interval_size, interval_size)
+            intervals = np.arange(
+                interval_size, total_num_updates + interval_size, interval_size
+            )
             logger.info(f"total_num_updates: {total_num_updates}")
             logger.info(f"ckpt intervals: {intervals}")
             agent.save_checkpoint(self.ckpt_dir, start_update_idx, mode=mode)
@@ -189,7 +207,9 @@ class PPOTrainer:
 
             # ! bootstrap value if not done
             calculate_advantages = torch.compile(
-                self.calculate_advantages, mode="reduce-overhead", disable=not self.use_compile
+                self.calculate_advantages,
+                mode="reduce-overhead",
+                disable=not self.use_compile,
             )
             calculate_advantages(
                 cfg,
@@ -211,15 +231,17 @@ class PPOTrainer:
             #   mode="reduce-overhead",
             #   disable=not self.use_compile)
             loss_tuple = self.train_agent(reshaped_storages, agent, env_list, env_ids)
-            total_envs_loss, total_value_loss, total_policy_loss, total_entropy_loss = loss_tuple
+            total_envs_loss, total_value_loss, total_policy_loss, total_entropy_loss = (
+                loss_tuple
+            )
             wandb_logger.log(
                 {
-                    f'{mode}/actor_lr': agent.actor_optimizer.param_groups[0]["lr"],
-                    f'{mode}/critic_lr': agent.critic_optimizer.param_groups[0]["lr"],
-                    f'{mode}/total_value_loss': total_value_loss,
-                    f'{mode}/total_policy_loss': total_policy_loss,
-                    f'{mode}/total_entropy_loss': total_entropy_loss,
-                    f'{mode}/total_envs_loss': total_envs_loss,
+                    f"{mode}/actor_lr": agent.actor_optimizer.param_groups[0]["lr"],
+                    f"{mode}/critic_lr": agent.critic_optimizer.param_groups[0]["lr"],
+                    f"{mode}/total_value_loss": total_value_loss,
+                    f"{mode}/total_policy_loss": total_policy_loss,
+                    f"{mode}/total_entropy_loss": total_entropy_loss,
+                    f"{mode}/total_envs_loss": total_envs_loss,
                 },
                 step=global_step,
             )
@@ -249,18 +271,28 @@ class PPOTrainer:
         # * set environments
         self.pretraining_env_list = []
         for j, env_id in enumerate(self.pretraining_env_ids):
-            envs = gym.vector.SyncVectorEnv([make_gymnasium_env(j, env_id, cfg) for i in range(exp_cfg.num_envs)])
+            envs = gym.vector.SyncVectorEnv(
+                [make_gymnasium_env(j, env_id, cfg) for i in range(exp_cfg.num_envs)]
+            )
             envs.env_id = env_id
             self.pretraining_env_list.append(envs)
-            print(f"{j+1}/{len(self.pretraining_env_ids)} environment {env_id} is loaded...")
+            print(
+                f"{j+1}/{len(self.pretraining_env_ids)} environment {env_id} is loaded..."
+            )
 
         print(f"pretraining env ids {self.pretraining_env_ids}")
         # * set agent
-        agent = PPOAgent(cfg, self.pretraining_env_ids, self.pretraining_env_list, mode='pretraining').to(device)
-        pretraining_total_num_params = sum([np.prod(p.size()) for p in agent.parameters()])
-        agent = torch.compile(agent, mode="reduce-overhead", disable=not self.use_compile)
+        agent = PPOAgent(
+            cfg, self.pretraining_env_ids, self.pretraining_env_list, mode="pretraining"
+        ).to(device)
+        pretraining_total_num_params = sum(
+            [np.prod(p.size()) for p in agent.parameters()]
+        )
+        agent = torch.compile(
+            agent, mode="reduce-overhead", disable=not self.use_compile
+        )
         print(f"pretraining total_num_params: {pretraining_total_num_params}")
-        with open(self.output_dir + '/pretraining_total_num_params.txt', mode='w') as f:
+        with open(self.output_dir + "/pretraining_total_num_params.txt", mode="w") as f:
             f.write(str(pretraining_total_num_params))
         wandb_logger.config["num_params_pretraining"] = pretraining_total_num_params
         global_step = 0
@@ -275,7 +307,7 @@ class PPOTrainer:
             self.pretraining_env_list,
             agent,
             device,
-            mode='pretraining',
+            mode="pretraining",
         )
         # # ! #################
         # # ! 2. Finetuning phase
@@ -366,17 +398,25 @@ class PPOTrainer:
                 envs_storages[env_id]["dones"][step] = next_done_dict[env_id]
 
                 with torch.no_grad():
-                    action, logprob, _, value = agent.get_action_and_value(env, next_obs_dict[env_id])
+                    action, logprob, _, value = agent.get_action_and_value(
+                        env, next_obs_dict[env_id]
+                    )
 
                 envs_storages[env_id]["values"][step] = value.flatten()
                 envs_storages[env_id]["actions"][step] = action
                 envs_storages[env_id]["logprobs"][step] = logprob
 
                 # TRY NOT TO MODIFY: execute the game and log data.
-                next_obs, reward, terminated, truncated, infos = env.step(action.cpu().numpy())
+                next_obs, reward, terminated, truncated, infos = env.step(
+                    action.cpu().numpy()
+                )
                 done = np.logical_or(terminated, truncated)
-                envs_storages[env_id]["rewards"][step] = torch.tensor(reward).to(device).view(-1)
-                next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(done).to(device)
+                envs_storages[env_id]["rewards"][step] = (
+                    torch.tensor(reward).to(device).view(-1)
+                )
+                next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(
+                    done
+                ).to(device)
                 next_obs_dict[env_id] = next_obs
                 next_done_dict[env_id] = next_done
                 episodic_returns = []
@@ -389,8 +429,14 @@ class PPOTrainer:
                             episodic_returns.append(episodic_return)
                             episodic_lengths.append(episodic_length)
                             local_step = local_steps[env_id]
-                            wandb_logger.log({f"{env_id}/episodic_return": episodic_return}, local_step)
-                            wandb_logger.log({f"{env_id}/episodic_length": episodic_length}, local_step)
+                            wandb_logger.log(
+                                {f"{env_id}/episodic_return": episodic_return},
+                                local_step,
+                            )
+                            wandb_logger.log(
+                                {f"{env_id}/episodic_length": episodic_length},
+                                local_step,
+                            )
                             print(
                                 f"[{update_idx}/{self.total_num_updates}] {mode}. env_name:{sub_env_ids[i]}, local_step: {local_step}, episodic_return={episodic_return}"
                             )
@@ -404,7 +450,9 @@ class PPOTrainer:
                 #     envs_returns[f'{mode}/' + env_id +'/mean_episodic_return'] = mean_episodic_return
                 #     # envs_returns[f'{mode}/' + env_id +'/std_episodic_return'] = std_episodic_return
                 #     # envs_lengths[f'{mode}/' + env_id +'/mean_episodic_length'] = mean_episodic_length
-            local_steps[env_id] += self.cfg.experiment.num_envs * self.cfg.experiment.num_rollout_steps
+            local_steps[env_id] += (
+                self.cfg.experiment.num_envs * self.cfg.experiment.num_rollout_steps
+            )
 
     def calculate_advantages(
         self,
@@ -422,8 +470,10 @@ class PPOTrainer:
             for i, env in enumerate(train_different_env_list):
                 env_id = sub_env_ids[i]
                 next_value = agent.get_value(env, next_obs_dict[env_id]).reshape(1, -1)
-                rewards = envs_storages[env_id]['rewards']
-                envs_storages[env_id]['advantages'] = torch.zeros_like(rewards).to(device)
+                rewards = envs_storages[env_id]["rewards"]
+                envs_storages[env_id]["advantages"] = torch.zeros_like(rewards).to(
+                    device
+                )
                 lastgaelam = 0
                 for t in reversed(range(exp_cfg.num_rollout_steps)):
                     if t == exp_cfg.num_rollout_steps - 1:
@@ -431,19 +481,34 @@ class PPOTrainer:
                         nextvalues = next_value
                     else:
                         nextnonterminal = 1.0 - envs_storages[env_id]["dones"][t + 1]
-                        nextvalues = envs_storages[env_id]['values'][t + 1]
+                        nextvalues = envs_storages[env_id]["values"][t + 1]
                     delta = (
-                        envs_storages[env_id]['rewards'][t]
+                        envs_storages[env_id]["rewards"][t]
                         + cfg.ppo.gamma * nextvalues * nextnonterminal
-                        - envs_storages[env_id]['values'][t]
+                        - envs_storages[env_id]["values"][t]
                     )
-                    envs_storages[env_id]['advantages'][t] = lastgaelam = (
-                        delta + cfg.ppo.gamma * cfg.ppo.gae_lambda * nextnonterminal * lastgaelam
+                    envs_storages[env_id]["advantages"][t] = lastgaelam = (
+                        delta
+                        + cfg.ppo.gamma
+                        * cfg.ppo.gae_lambda
+                        * nextnonterminal
+                        * lastgaelam
                     )
-                envs_storages[env_id]['returns'] = envs_storages[env_id]['advantages'] + envs_storages[env_id]['values']
+                envs_storages[env_id]["returns"] = (
+                    envs_storages[env_id]["advantages"]
+                    + envs_storages[env_id]["values"]
+                )
 
     # @torch.compile
-    def eval_agent(self, agent, test_different_envs, sub_env_ids, device, update_idx, global_step: int) -> Dict:
+    def eval_agent(
+        self,
+        agent,
+        test_different_envs,
+        sub_env_ids,
+        device,
+        update_idx,
+        global_step: int,
+    ) -> Dict:
         agent.eval()
         # exp_cfg = self.cfg.experiment
         eval_cfg = self.cfg.evaluation
@@ -463,8 +528,8 @@ class PPOTrainer:
                     next_obs = torch.Tensor(next_obs).to(device)
                     if True in dones:
                         done_env_indices = np.where(dones)
-                        total_return = info['r'][done_env_indices]
-                        total_length = info['l'][done_env_indices]
+                        total_return = info["r"][done_env_indices]
+                        total_length = info["l"][done_env_indices]
                         ith_test_episodic_returns += [*total_return]
                         ith_test_episodic_lengths += [*total_length]
             ith_test_episodic_returns = np.array(ith_test_episodic_returns)
@@ -472,10 +537,18 @@ class PPOTrainer:
             # test_envs_returns[self.pretraining_env_ids[i]+'/eval'] = ith_test_episodic_returns
 
             for batch_index in range(eval_cfg.num_eval):
-                test_envs_returns[sub_env_ids[i] + f'/eval_{batch_index}'] = ith_test_episodic_returns[batch_index]
-            test_envs_returns[sub_env_ids[i] + '/eval_mean'] = ith_test_episodic_returns.mean()
-            test_envs_returns[sub_env_ids[i] + '/eval_std'] = ith_test_episodic_returns.std()
-            test_envs_lengths[sub_env_ids[i] + '/eval_length'] = ith_test_episodic_lengths.mean()
+                test_envs_returns[sub_env_ids[i] + f"/eval_{batch_index}"] = (
+                    ith_test_episodic_returns[batch_index]
+                )
+            test_envs_returns[sub_env_ids[i] + "/eval_mean"] = (
+                ith_test_episodic_returns.mean()
+            )
+            test_envs_returns[sub_env_ids[i] + "/eval_std"] = (
+                ith_test_episodic_returns.std()
+            )
+            test_envs_lengths[sub_env_ids[i] + "/eval_length"] = (
+                ith_test_episodic_lengths.mean()
+            )
             logger.info(
                 f"[{update_idx}/{self.total_num_updates}] Evaluation. env_name:{sub_env_ids[i]}, global_step={global_step}, mean_episodic_return={ith_test_episodic_returns.mean()}"
             )
@@ -489,7 +562,9 @@ class PPOTrainer:
         return test_envs_returns
 
     # @torch.compile
-    def train_agent(self, reshaped_storages, agent, train_different_env_list, sub_env_ids):
+    def train_agent(
+        self, reshaped_storages, agent, train_different_env_list, sub_env_ids
+    ):
         b_inds = np.arange(self.batch_size)
         total_epochs_envs_loss = 0.0
         total_epochs_value_loss = 0.0
@@ -533,38 +608,63 @@ class PPOTrainer:
                 total_epochs_policy_loss += total_policy_loss
                 total_epochs_entropy_loss += total_entropy_loss
 
-        total_epochs_envs_loss = total_epochs_envs_loss / self.cfg.ppo.update_epochs / self.cfg.ppo.num_minibatches
-        total_epochs_value_loss = total_epochs_value_loss / self.cfg.ppo.update_epochs / self.cfg.ppo.num_minibatches
-        total_epochs_policy_loss = total_epochs_policy_loss / self.cfg.ppo.update_epochs / self.cfg.ppo.num_minibatches
+        total_epochs_envs_loss = (
+            total_epochs_envs_loss
+            / self.cfg.ppo.update_epochs
+            / self.cfg.ppo.num_minibatches
+        )
+        total_epochs_value_loss = (
+            total_epochs_value_loss
+            / self.cfg.ppo.update_epochs
+            / self.cfg.ppo.num_minibatches
+        )
+        total_epochs_policy_loss = (
+            total_epochs_policy_loss
+            / self.cfg.ppo.update_epochs
+            / self.cfg.ppo.num_minibatches
+        )
         total_epochs_entropy_loss = (
-            total_epochs_entropy_loss / self.cfg.ppo.update_epochs / self.cfg.ppo.num_minibatches
+            total_epochs_entropy_loss
+            / self.cfg.ppo.update_epochs
+            / self.cfg.ppo.num_minibatches
         )
 
-        return total_epochs_envs_loss, total_epochs_value_loss, total_epochs_policy_loss, total_epochs_entropy_loss
+        return (
+            total_epochs_envs_loss,
+            total_epochs_value_loss,
+            total_epochs_policy_loss,
+            total_epochs_entropy_loss,
+        )
 
     def calculate_ppo_loss(self, reshaped_storages, agent, env_id, env, mb_inds):
-        mb_obs = reshaped_storages[env_id]['obs'][mb_inds]
-        mb_actions = reshaped_storages[env_id]['actions'][mb_inds]
-        mb_logprobs = reshaped_storages[env_id]['logprobs'][mb_inds]
-        _, newlogprob, entropy, newvalue = agent.get_action_and_value(env, mb_obs, mb_actions)
+        mb_obs = reshaped_storages[env_id]["obs"][mb_inds]
+        mb_actions = reshaped_storages[env_id]["actions"][mb_inds]
+        mb_logprobs = reshaped_storages[env_id]["logprobs"][mb_inds]
+        _, newlogprob, entropy, newvalue = agent.get_action_and_value(
+            env, mb_obs, mb_actions
+        )
         logratio = newlogprob - mb_logprobs
         ratio = logratio.exp()
 
-        mb_advantages = reshaped_storages[env_id]['advantages'][mb_inds]
+        mb_advantages = reshaped_storages[env_id]["advantages"][mb_inds]
         if self.cfg.ppo.norm_adv:
-            mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
+            mb_advantages = (mb_advantages - mb_advantages.mean()) / (
+                mb_advantages.std() + 1e-8
+            )
 
         # Policy loss
         pg_loss1 = -mb_advantages * ratio
-        pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - self.cfg.ppo.clip_coef, 1 + self.cfg.ppo.clip_coef)
+        pg_loss2 = -mb_advantages * torch.clamp(
+            ratio, 1 - self.cfg.ppo.clip_coef, 1 + self.cfg.ppo.clip_coef
+        )
         pg_loss = torch.max(pg_loss1, pg_loss2).mean()
 
         # Value loss
-        mb_returns = reshaped_storages[env_id]['returns'][mb_inds].view(-1)
+        mb_returns = reshaped_storages[env_id]["returns"][mb_inds].view(-1)
         if self.cfg.ppo.norm_return:
             mb_returns = (mb_returns - mb_returns.mean()) / (mb_returns.std() + 1e-8)
 
-        mb_values = reshaped_storages[env_id]['values'][mb_inds].view(-1)
+        mb_values = reshaped_storages[env_id]["values"][mb_inds].view(-1)
         newvalue = newvalue.view(-1)
         if self.cfg.ppo.clip_vloss:
             v_loss_unclipped = (newvalue - mb_returns) ** 2

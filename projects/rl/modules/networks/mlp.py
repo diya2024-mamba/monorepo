@@ -16,7 +16,9 @@ class Block(nn.Module):
         activation_name = nn_cfg.mlp.activation
         activation_func = get_activation(activation_name)
         self.fn = nn.Sequential(
-            layer_init(nn.Linear(dim, expansion_dim), std=1 / expansion_dim),  # 1/(dim*expansion_dim)
+            layer_init(
+                nn.Linear(dim, expansion_dim), std=1 / expansion_dim
+            ),  # 1/(dim*expansion_dim)
             activation_func(),
             nn.Dropout(dropout),
             layer_init(
@@ -41,10 +43,14 @@ class ResidualMLP(nn.Module):
         activation_name = nn_cfg.mlp.activation
         activation_func = get_activation(activation_name)
         self.mlp_input = nn.Sequential(
-            layer_init(nn.Linear(input_dim, hidden_dim), std=1 / hidden_dim),  # np.sqrt(input_dim*hidden_dim)
+            layer_init(
+                nn.Linear(input_dim, hidden_dim), std=1 / hidden_dim
+            ),  # np.sqrt(input_dim*hidden_dim)
             activation_func(),
         )
-        self.mlp_blocks = nn.Sequential(*[Block(nn_cfg, hidden_dim, expansion_dim, dropout) for _ in range(depth)])
+        self.mlp_blocks = nn.Sequential(
+            *[Block(nn_cfg, hidden_dim, expansion_dim, dropout) for _ in range(depth)]
+        )
         self.mlp_head = nn.Sequential(
             layer_init(nn.Linear(hidden_dim, output_dim), std=1 / output_dim),
         )

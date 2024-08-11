@@ -12,27 +12,27 @@ from source.utils import load_yaml
 load_dotenv()
 
 prj_dir = os.path.dirname(os.path.abspath(__file__))
-config_path = os.path.join(prj_dir, 'config_yaml', 'base.yaml')
+config_path = os.path.join(prj_dir, "config_yaml", "base.yaml")
 config = load_yaml(path=config_path)
 
 llm = llm_generator(
-    generator_type=config['generator_type'],
-    generator_model=config['generator_model'],
+    generator_type=config["generator_type"],
+    generator_model=config["generator_model"],
 )
 
 
 def upper_case_stream(query: str):
     script = script_retriever(
-        config['embedding_type'],
-        config['embedding_model'],
-        config['db'],
+        config["embedding_type"],
+        config["embedding_model"],
+        config["db"],
         query,
     )
-    prompt = config['prompt']
+    prompt = config["prompt"]
     prompt_variables = {
         "script": script,
         "question": query,
-        "character": config['character'],
+        "character": config["character"],
     }
     print(script)
     answer = generate_chain(llm, prompt, prompt_variables)

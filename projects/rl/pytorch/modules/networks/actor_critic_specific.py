@@ -12,7 +12,7 @@ from modules.utils import get_activation
 from omegaconf import OmegaConf
 from torch.distributions import Categorical, Normal
 
-GymSpace = TypeVar('GymSpace', GymnasiumBox, GymnasiumDiscrete)
+GymSpace = TypeVar("GymSpace", GymnasiumBox, GymnasiumDiscrete)
 Env = GymnasiumEnv
 
 
@@ -35,7 +35,9 @@ class SpecificBase(nn.Module):
         self.encoders_dict = nn.ModuleDict(encoders_dict)
         self.use_mlp = cfg.nn.actor_critic.use_mlp
         if self.use_mlp:
-            self.shared_mlp: torch.nn.Module = ResidualMLP(cfg, self.d_model, self.d_model)
+            self.shared_mlp: torch.nn.Module = ResidualMLP(
+                cfg, self.d_model, self.d_model
+            )
 
     def add_obs_encoders(self, new_envs: List[Env]):
         # add new_encoders
@@ -76,7 +78,9 @@ class SpecificActor(SpecificBase):
         for env_id, env in zip(env_ids, env_list):
             if isinstance(env.single_action_space, GymnasiumBox):
                 act_dim = np.prod(env.single_action_space.shape)
-                mean_decoder = ResidualMLP(cfg, self.d_model, act_dim)  # ResidualMLP(cfg, obs_dim, 256)
+                mean_decoder = ResidualMLP(
+                    cfg, self.d_model, act_dim
+                )  # ResidualMLP(cfg, obs_dim, 256)
                 logstd_decoder = ResidualMLP(cfg, self.d_model, act_dim)
                 mean_decoders_dict[env_id] = mean_decoder
                 logstd_decoders_dict[env_id] = logstd_decoder
@@ -95,7 +99,9 @@ class SpecificActor(SpecificBase):
             env_id = env.env_id
             if isinstance(env.single_action_space, GymnasiumBox):
                 act_dim = np.prod(env.single_action_space.shape)
-                mean_decoder = ResidualMLP(self.cfg, self.d_model, act_dim)  # ResidualMLP(cfg, obs_dim, 256)
+                mean_decoder = ResidualMLP(
+                    self.cfg, self.d_model, act_dim
+                )  # ResidualMLP(cfg, obs_dim, 256)
                 logstd_decoder = ResidualMLP(self.cfg, self.d_model, act_dim)
                 self.mean_decoders_dict[env_id] = mean_decoder
                 self.logstd_decoders_dict[env_id] = logstd_decoder
@@ -193,7 +199,9 @@ class SpecificDiscreteQNetwork(SpecificBase):
         for env in new_envs:
             env_id = env.env_id
             if isinstance(env.single_action_space, GymnasiumDiscrete):
-                q_decoder = ResidualMLP(self.cfg, self.d_model, env.single_action_space.n)
+                q_decoder = ResidualMLP(
+                    self.cfg, self.d_model, env.single_action_space.n
+                )
                 self.value_decoder_dict[env_id] = q_decoder
             else:
                 continue
@@ -225,7 +233,9 @@ class SpecificContinuousQNetwork(SpecificBase):
         decoders_dict = {}
         for env_id, env in zip(env_ids, env_list):
             if isinstance(env.single_action_space, GymnasiumBox):
-                act_encoder = ResidualMLP(cfg, np.prod(env.single_action_space.shape), self.d_model)
+                act_encoder = ResidualMLP(
+                    cfg, np.prod(env.single_action_space.shape), self.d_model
+                )
                 act_encoders_dict[env_id] = act_encoder
                 q_decoder = ResidualMLP(cfg, self.d_model, 1)
                 decoders_dict[env_id] = q_decoder
@@ -238,7 +248,9 @@ class SpecificContinuousQNetwork(SpecificBase):
         for env in new_envs:
             env_id = env.env_id
             if isinstance(env.single_action_space, GymnasiumBox):
-                act_encoder = ResidualMLP(self.cfg, np.prod(env.single_action_space.shape), self.d_model)
+                act_encoder = ResidualMLP(
+                    self.cfg, np.prod(env.single_action_space.shape), self.d_model
+                )
                 self.act_encoders_dict[env_id] = act_encoder
                 q_decoder = ResidualMLP(self.cfg, self.d_model, 1)
                 self.value_decoder_dict[env_id] = q_decoder
@@ -286,10 +298,14 @@ class SpecificContinuousTwinQ(nn.Module):
         self.cq1 = SpecificContinuousQNetwork(cfg, env_ids, env_list)
         self.cq2 = SpecificContinuousQNetwork(cfg, env_ids, env_list)
 
-    def both(self, env: Env, s: torch.Tensor, a: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def both(
+        self, env: Env, s: torch.Tensor, a: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         return self.cq1(env, s, a), self.cq2(env, s, a)
 
-    def forward(self, env: Env, s: torch.Tensor, a: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, env: Env, s: torch.Tensor, a: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         return torch.min(*self.both(env, s, a))
 
 

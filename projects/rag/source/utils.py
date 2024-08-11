@@ -22,7 +22,7 @@ def load_env() -> None:
 
 
 def load_yaml(path: str) -> dict:
-    with open(path, 'r', encoding='UTF8') as f:
+    with open(path, "r", encoding="UTF8") as f:
         load_yaml = yaml.load(f, Loader=yaml.FullLoader)
     return load_yaml
 
@@ -57,8 +57,8 @@ def upload_file(path: Path) -> None:
     )
     for f in files:
         print(f"파일 업로드: {f}")
-        with open(f, 'rb') as handle:
-            response = requests.post(url, files={'file': handle}, auth=auth)
+        with open(f, "rb") as handle:
+            response = requests.post(url, files={"file": handle}, auth=auth)
         response.raise_for_status()
 
 
