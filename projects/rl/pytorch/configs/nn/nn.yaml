@@ -1,0 +1,31 @@
+env_specific_enc_dec: False
+actor_critic:
+  use_compile: False
+  use_mlp: True
+  d_model: 256
+  activation: silu # identity, tanh, gelu, relu, eli, swish, silu, glu, sigmoid, softplus, modrelu,
+  optimizer: adam # adam
+  gradient_visualization: False
+  last_operation: sum # sum or mean
+  input_to_hidden: sum # sum or mean
+  hidden_to_output: sum # sum or mean
+  pos_encoding: False
+  encoder_type: mamba # mamba, rnn
+  decoder_type: mamba # mamba, rnn
+
+
+mlp:
+  depth: 2
+  hidden_dim: 256
+  expansion_dim: 256
+  dropout: 0.0
+  activation: silu
+
+mamba:
+  d_state: 128
+  d_conv: 4
+  expand: 2
+  num_blocks: 1
+
+rnn:
+  num_layers: 2

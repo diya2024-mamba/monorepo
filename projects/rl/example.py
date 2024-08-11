@@ -9,7 +9,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.logger import HumanOutputFormat, KVWriter, Logger
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '../../.env')
+dotenv_path = os.path.join(os.path.dirname(__file__), "../../.env")
 load_dotenv(dotenv_path)
 
 mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000"))
@@ -28,7 +28,9 @@ class MLflowOutputFormat(KVWriter):
         step: int = 0,
     ) -> None:
 
-        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
+        for (key, value), (_, excluded) in zip(
+            sorted(key_values.items()), sorted(key_excluded.items())
+        ):
 
             if excluded is not None and "mlflow" in excluded:
                 continue

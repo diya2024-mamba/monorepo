@@ -6,7 +6,9 @@ from langchain_openai import ChatOpenAI
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 
-def huggingface_pipeline(generator_model: AutoModelForCausalLM, tokenizer: AutoTokenizer):
+def huggingface_pipeline(
+    generator_model: AutoModelForCausalLM, tokenizer: AutoTokenizer
+):
     """huggingface model을 활용하여 llm 연동"""
     pipe = pipeline(
         "text-generation",
@@ -23,9 +25,11 @@ def huggingface_pipeline(generator_model: AutoModelForCausalLM, tokenizer: AutoT
     return huggingface_llm
 
 
-def chat_open_ai_llm(generator_model='gpt-3.5-turbo'):
+def chat_open_ai_llm(generator_model="gpt-3.5-turbo"):
     """OpenAI API model을 활용하여 llm 연동"""
-    open_ai_llm = ChatOpenAI(temperature=0.1, max_tokens=2048, model_name=generator_model)
+    open_ai_llm = ChatOpenAI(
+        temperature=0.1, max_tokens=2048, model_name=generator_model
+    )
     return open_ai_llm
 
 
