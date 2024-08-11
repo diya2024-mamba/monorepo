@@ -13,10 +13,9 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from tqdm import tqdm
 
-API_KEY = "Put your api key here"
-
 
 def get_client():
+    API_KEY = "Wrtie your API key in .env file"
     # OpenAI API key만 지원 (240810)
     if args.model_name in ["gpt-4", "gpt-4o", "gpt-4o-mini"]:
         openai.api_key = os.getenv("OPENAI_API_KEY")
