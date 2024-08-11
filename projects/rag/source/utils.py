@@ -27,6 +27,18 @@ def load_yaml(path: str) -> dict:
     return load_yaml
 
 
+def load_txt(path: str) -> list:
+    script = []
+    f = open(path, "r", encoding="UTF8")
+    lines = f.readlines()
+    for line in lines:
+        line = line.strip()
+        if line:
+            script.append(line)
+    f.close()
+    return script
+
+
 def list_files() -> list[str]:
     url = os.environ["FILE_SERVER_URI"] + "/files"
     auth = HTTPBasicAuth(
