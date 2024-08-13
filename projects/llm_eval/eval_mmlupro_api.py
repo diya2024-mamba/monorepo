@@ -4,7 +4,6 @@ import os
 import random
 import re
 import time
-
 from concurrent.futures import ThreadPoolExecutor
 
 import anthropic
@@ -13,8 +12,10 @@ import openai
 from datasets import load_dataset
 from dotenv import load_dotenv
 from openai import OpenAI
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset as TorchDataset
 from tqdm import tqdm
-from torch.utils.data import DataLoader, Dataset as TorchDataset
+
 
 class CustomDataset(TorchDataset):
     def __init__(self, dataset):
@@ -27,11 +28,13 @@ class CustomDataset(TorchDataset):
         item = self.dataset[idx]
         return item
 
+
 def collate_fn(batch):
-    
+
     datas = [x for x in batch]
 
     return datas
+
 
 def get_client(args):
     API_KEY = "Wrtie your API key in .env file"
@@ -85,7 +88,6 @@ def get_client(args):
 
 
 def call_api(args, client, instruction, inputs):
-    start = time.time()
     if args.model_name in [
         "gpt-4",
         "gpt-4o",
@@ -133,6 +135,7 @@ def load_mmlu_pro():
     val_df = preprocess(val_df)
     return test_df, val_df
 
+
 def preprocess(df):
     res_df = []
     for each in df:
@@ -166,6 +169,7 @@ def format_example(question, options, cot_content=""):
         example += "Answer: " + cot_content + "\n\n"
     return example
 
+
 def extract_answer(text):
     pattern = r"answer is \(?([A-J])\)?"
     match = re.search(pattern, text)
@@ -192,6 +196,7 @@ def extract_final(text):
     else:
         return None
 
+
 def single_request_dict(args, client, single_question, cot_examples_dict, exist_result):
     exist = True
     q_id = single_question["question_id"]
@@ -201,7 +206,7 @@ def single_request_dict(args, client, single_question, cot_examples_dict, exist_
             and single_question["question"] == each["question"]
         ):
             pred = extract_answer(each["model_outputs"])
-            return {"pred":pred, "response":each["model_outputs"], "exist":exist}
+            return {"pred": pred, "response": each["model_outputs"], "exist": exist}
     exist = False
     category = single_question["category"]
     cot_examples = cot_examples_dict[category]
@@ -224,7 +229,8 @@ def single_request_dict(args, client, single_question, cot_examples_dict, exist_
         print("error", e)
         return None, None, exist
     pred = extract_answer(response)
-    return {"pred":pred, "response":response, "exist":exist}
+    return {"pred": pred, "response": response, "exist": exist}
+
 
 def update_result(output_res_path):
     category_record = {}
@@ -283,21 +289,32 @@ def evaluate_batch(args, subjects):
         output_res_path = os.path.join(args.output_dir, subject + "_result.json")
         output_summary_path = os.path.join(args.output_dir, subject + "_summary.json")
         res, category_record = update_result(output_res_path)
-        
-        custom_dataset = CustomDataset(test_data)
-        dataloader = iter(DataLoader(test_data, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn))
-        
+
+        dataloader = iter(
+            DataLoader(
+                test_data,
+                batch_size=args.batch_size,
+                shuffle=False,
+                collate_fn=collate_fn,
+            )
+        )
+
         for batch in tqdm(dataloader):
             # label = datas["answer"]
             # category = subject
 
             with ThreadPoolExecutor() as executor:
-                dict_list = list(executor.map(lambda x: single_request_dict(args, client, x, dev_df, res), batch))
-            
+                dict_list = list(
+                    executor.map(
+                        lambda x: single_request_dict(args, client, x, dev_df, res),
+                        batch,
+                    )
+                )
+
             category = subject
             for result, data in zip(dict_list, batch):
                 label = data["answer"]
-                response, pred = result['response'], result['pred']
+                response, pred = result["response"], result["pred"]
                 if response is not None:
                     res, category_record = update_result(output_res_path)
                     if category not in category_record:
@@ -317,6 +334,7 @@ def evaluate_batch(args, subjects):
                     res, category_record = update_result(output_res_path)
         save_res(res, output_res_path)
         save_summary(category_record, output_summary_path)
+
 
 def save_res(res, output_res_path):
     temp = []
