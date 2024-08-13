@@ -1,5 +1,6 @@
 import json
 import re
+import os
 
 import fitz
 from dotenv import load_dotenv
@@ -9,20 +10,20 @@ from utils import load_txt
 load_dotenv()
 
 
-def harrypotter_1_preprocess(pdf_path: str) -> None:
+def harrypotter_3_preprocess(pdf_path: str) -> None:
     """
     data/해리포터3 대본.pdf preprocessing pdf -> txt
     """
     eng_script = []
     kor_script = []
 
-    eng_com = re.compile(r"\\(?[a-zA-Z]")
+    eng_com = re.compile(r"\(?[a-zA-Z]")
 
     doc = fitz.open(pdf_path)
 
     for p in range(len(doc)):
         page = doc.load_page(p)
-        text = page.get_text("text").replace("\\xa0\\n", "").split("\\n")
+        text = page.get_text("text").replace("\xa0\n", "").split("\n")
         for t in text:
             if t == "":
                 continue
@@ -31,17 +32,34 @@ def harrypotter_1_preprocess(pdf_path: str) -> None:
             else:
                 kor_script.append(t)
     doc.close()
-    file_name = "ko_script.txt"
 
-    with open(file_name, "w+") as file:
-        file.write("\\n".join(kor_script))
-    file_name = "eng_script.txt"
+    path = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
+    path  = os.path.join(path, 'data')
 
-    with open(file_name, "w+") as file:
-        file.write("\\n".join(eng_script))
+    file_name = os.path.join(path, "ko_script3.txt")
+    with open(file_name, "w+", encoding='utf-8') as file:
+        file.write("\n".join(kor_script))
+
+    file_name = os.path.join(path, "eng_script3.txt")
+    with open(file_name, "w+", encoding='utf-8') as file:
+        file.write("\n".join(eng_script))
 
     return
 
+def preprocess_txt(txt_path, save_name):
+    f = open(txt_path,  encoding='utf-8')
+    lines = f.readlines()
+    script = []
+    before_line = ''
+    for line in lines:
+        if line.find(':') > -1 or line.find('(') > -1 :
+            script.append(before_line.replace('\n',''))
+            before_line = line
+        else:
+            before_line = before_line + line
+    
+    with open(save_name, 'w+', encoding='utf-8') as file:
+        file.write('\n'.join(script))
 
 def preprocess_metadata(txt_path: str, save_path=None) -> list:
     """
@@ -59,7 +77,8 @@ def preprocess_metadata(txt_path: str, save_path=None) -> list:
 
     for i in range(len(script)):
         if ":" in script[i]:
-            character, dialogue = script[i].split(":")
+            d = script[i].split(":")
+            character, dialogue = d[0], d[1]
             character, dialogue = character.strip(), dialogue.strip()
             sample.append(
                 Document(
@@ -86,4 +105,11 @@ def preprocess_metadata(txt_path: str, save_path=None) -> list:
 
 
 if __name__ == "__main__":
-    preprocess_metadata("data/ko_script.txt", "data/ko_script.json")
+    path = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
+    path  = os.path.join(path, 'data')
+    
+    harrypotter_3_preprocess(os.path.join(path, '해리포터3 대본.pdf'))
+    
+    txt_path = os.path.join(path, 'ko_script3.txt')
+    preprocess_txt(txt_path, txt_path)
+    preprocess_metadata(txt_path, os.path.join(path, 'ko_script3.json'))
