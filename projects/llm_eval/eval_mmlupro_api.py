@@ -5,6 +5,8 @@ import random
 import re
 import time
 
+from concurrent.futures import ThreadPoolExecutor
+
 import anthropic
 import google.generativeai as genai
 import openai
@@ -12,9 +14,26 @@ from datasets import load_dataset
 from dotenv import load_dotenv
 from openai import OpenAI
 from tqdm import tqdm
+from torch.utils.data import DataLoader, Dataset as TorchDataset
 
+class CustomDataset(TorchDataset):
+    def __init__(self, dataset):
+        self.dataset = dataset
 
-def get_client():
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        item = self.dataset[idx]
+        return item
+
+def collate_fn(batch):
+    
+    datas = [x for x in batch]
+
+    return datas
+
+def get_client(args):
     API_KEY = "Wrtie your API key in .env file"
     # OpenAI API key만 지원 (240810)
     if args.model_name in ["gpt-4", "gpt-4o", "gpt-4o-mini"]:
@@ -65,7 +84,7 @@ def get_client():
     return client
 
 
-def call_api(client, instruction, inputs):
+def call_api(args, client, instruction, inputs):
     start = time.time()
     if args.model_name in [
         "gpt-4",
@@ -104,7 +123,6 @@ def call_api(client, instruction, inputs):
             "For other model API calls, please implement the request method yourself."
         )
         result = None
-    print("cost time", time.time() - start)
     return result
 
 
@@ -114,7 +132,6 @@ def load_mmlu_pro():
     test_df = preprocess(test_df)
     val_df = preprocess(val_df)
     return test_df, val_df
-
 
 def preprocess(df):
     res_df = []
@@ -149,7 +166,6 @@ def format_example(question, options, cot_content=""):
         example += "Answer: " + cot_content + "\n\n"
     return example
 
-
 def extract_answer(text):
     pattern = r"answer is \(?([A-J])\)?"
     match = re.search(pattern, text)
@@ -176,8 +192,7 @@ def extract_final(text):
     else:
         return None
 
-
-def single_request(client, single_question, cot_examples_dict, exist_result):
+def single_request_dict(args, client, single_question, cot_examples_dict, exist_result):
     exist = True
     q_id = single_question["question_id"]
     for each in exist_result:
@@ -186,7 +201,7 @@ def single_request(client, single_question, cot_examples_dict, exist_result):
             and single_question["question"] == each["question"]
         ):
             pred = extract_answer(each["model_outputs"])
-            return pred, each["model_outputs"], exist
+            return {"pred":pred, "response":each["model_outputs"], "exist":exist}
     exist = False
     category = single_question["category"]
     cot_examples = cot_examples_dict[category]
@@ -202,15 +217,14 @@ def single_request(client, single_question, cot_examples_dict, exist_result):
         prompt += format_example(each["question"], each["options"], each["cot_content"])
     input_text = format_example(question, options)
     try:
-        start = time.time()
-        response = call_api(client, prompt, input_text)
-        print("requesting gpt 4 costs: ", time.time() - start)
+        # start = time.time()
+        response = call_api(args, client, prompt, input_text)
+        # print("requesting gpt 4 costs: ", time.time() - start)
     except Exception as e:
         print("error", e)
         return None, None, exist
     pred = extract_answer(response)
-    return pred, response, exist
-
+    return {"pred":pred, "response":response, "exist":exist}
 
 def update_result(output_res_path):
     category_record = {}
@@ -258,8 +272,8 @@ def merge_result(res, curr):
     return res
 
 
-def evaluate(subjects):
-    client = get_client()
+def evaluate_batch(args, subjects):
+    client = get_client(args)
     test_df, dev_df = load_mmlu_pro()
     if not subjects:
         subjects = list(test_df.keys())
@@ -269,33 +283,40 @@ def evaluate(subjects):
         output_res_path = os.path.join(args.output_dir, subject + "_result.json")
         output_summary_path = os.path.join(args.output_dir, subject + "_summary.json")
         res, category_record = update_result(output_res_path)
+        
+        custom_dataset = CustomDataset(test_data)
+        dataloader = iter(DataLoader(test_data, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn))
+        
+        for batch in tqdm(dataloader):
+            # label = datas["answer"]
+            # category = subject
 
-        for each in tqdm(test_data):
-            label = each["answer"]
+            with ThreadPoolExecutor() as executor:
+                dict_list = list(executor.map(lambda x: single_request_dict(args, client, x, dev_df, res), batch))
+            
             category = subject
-            pred, response, exist = single_request(client, each, dev_df, res)
-            # if exist:
-            #     continue
-            if response is not None:
-                res, category_record = update_result(output_res_path)
-                if category not in category_record:
-                    category_record[category] = {"corr": 0.0, "wrong": 0.0}
-                each["pred"] = pred
-                each["model_outputs"] = response
-                merge_result(res, each)
-                if pred is not None:
-                    if pred == label:
-                        category_record[category]["corr"] += 1
+            for result, data in zip(dict_list, batch):
+                label = data["answer"]
+                response, pred = result['response'], result['pred']
+                if response is not None:
+                    res, category_record = update_result(output_res_path)
+                    if category not in category_record:
+                        category_record[category] = {"corr": 0.0, "wrong": 0.0}
+                    data["pred"] = pred
+                    data["model_outputs"] = response
+                    merge_result(res, data)
+                    if pred is not None:
+                        if pred == label:
+                            category_record[category]["corr"] += 1
+                        else:
+                            category_record[category]["wrong"] += 1
                     else:
                         category_record[category]["wrong"] += 1
-                else:
-                    category_record[category]["wrong"] += 1
-                save_res(res, output_res_path)
-                save_summary(category_record, output_summary_path)
-                res, category_record = update_result(output_res_path)
+                    save_res(res, output_res_path)
+                    save_summary(category_record, output_summary_path)
+                    res, category_record = update_result(output_res_path)
         save_res(res, output_res_path)
         save_summary(category_record, output_summary_path)
-
 
 def save_res(res, output_res_path):
     temp = []
@@ -330,7 +351,7 @@ def save_summary(category_record, output_summary_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--output_dir", "-o", type=str, default="projects/llm_eval/eval_results_api/"
+        "--output_dir", "-o", type=str, default="./data/eval_results_api"
     )
     parser.add_argument(
         "--model_name",
@@ -350,6 +371,7 @@ if __name__ == "__main__":
         ],
     )
     parser.add_argument("--assigned_subjects", "-a", type=str, default="all")
+    parser.add_argument("--batch_size", type=int, default=4)
     args = parser.parse_args()
 
     load_dotenv()
@@ -360,4 +382,4 @@ if __name__ == "__main__":
     else:
         assigned_subjects = args.assigned_subjects.split(",")
     os.makedirs(args.output_dir, exist_ok=True)
-    evaluate(assigned_subjects)
+    evaluate_batch(args, assigned_subjects)
