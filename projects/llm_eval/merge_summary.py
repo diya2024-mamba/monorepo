@@ -1,6 +1,7 @@
 import argparse
-import os
 import json
+import os
+
 
 def merge_output(output_dir):
     outputs = os.listdir(output_dir)
@@ -22,5 +23,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir', type=str, required=True, help='Directory containing the result pickle files.')
     args = parser.parse_args()
-    
+
     merge_output(args.output_dir)
