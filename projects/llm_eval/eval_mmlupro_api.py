@@ -41,7 +41,10 @@ def get_client(args):
     # OpenAI API key만 지원 (240810)
     if args.model_name in ["gpt-4", "gpt-4o", "gpt-4o-mini"]:
         openai.api_key = os.getenv("OPENAI_API_KEY")
-        client = openai
+        client = OpenAI(
+            organization=os.getenv("OPENAI_ORGANIZATION"),
+            project=os.getenv("OPENAI_PROJECT"),
+        )
     elif args.model_name in ["deepseek-chat", "deepseek-coder"]:
         client = OpenAI(api_key=API_KEY, base_url="https://api.deepseek.com/")
     elif args.model_name in ["gemini-1.5-flash-latest", "gemini-1.5-pro-latest"]:
@@ -212,6 +215,13 @@ def single_request_dict(args, client, single_question, cot_examples_dict, exist_
     cot_examples = cot_examples_dict[category]
     question = single_question["question"]
     options = single_question["options"]
+
+    if args.shuffle == "reverse":
+        options = options[::-1]
+    elif args.shuffle == "random":
+        random.seed(42)
+        random.shuffle(options)
+
     prompt = (
         "The following are multiple choice questions (with answers) about {}. Think step by"
         ' step and then output the answer in the format of "The answer is (X)" at the end.\n\n'.format(
@@ -330,10 +340,10 @@ def evaluate_batch(args, subjects):
                     else:
                         category_record[category]["wrong"] += 1
                     save_res(res, output_res_path)
-                    save_summary(category_record, output_summary_path)
+                    save_summary(category_record, output_summary_path, args.shuffle)
                     res, category_record = update_result(output_res_path)
         save_res(res, output_res_path)
-        save_summary(category_record, output_summary_path)
+        save_summary(category_record, output_summary_path, args.shuffle)
 
 
 def save_res(res, output_res_path):
@@ -350,7 +360,7 @@ def save_res(res, output_res_path):
         fo.write(json.dumps(res))
 
 
-def save_summary(category_record, output_summary_path):
+def save_summary(category_record, output_summary_path, shuffle=None):
     total_corr = 0.0
     total_wrong = 0.0
     for k, v in category_record.items():
@@ -362,6 +372,10 @@ def save_summary(category_record, output_summary_path):
         total_wrong += v["wrong"]
     acc = total_corr / (total_corr + total_wrong)
     category_record["total"] = {"corr": total_corr, "wrong": total_wrong, "acc": acc}
+
+    if shuffle is not None:
+        category_record["shuffle"] = shuffle
+
     with open(output_summary_path, "w") as fo:
         fo.write(json.dumps(category_record))
 
@@ -390,6 +404,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--assigned_subjects", "-a", type=str, default="all")
     parser.add_argument("--batch_size", type=int, default=4)
+    parser.add_argument("--shuffle", type=str, choices=["reverse", "random"])
     args = parser.parse_args()
 
     load_dotenv()
