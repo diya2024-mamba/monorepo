@@ -3,6 +3,7 @@ import json
 import os
 import random
 import re
+import textwrap
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -15,7 +16,6 @@ from openai import OpenAI
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset as TorchDataset
 from tqdm import tqdm
-import textwrap
 
 
 class CustomDataset(TorchDataset):
