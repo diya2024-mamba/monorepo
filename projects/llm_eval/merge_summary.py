@@ -15,9 +15,11 @@ def merge_output(output_dir):
                 data = json.load(rf)
                 all_data["total"]["corr"] += data["total"]["corr"]
                 all_data["total"]["wrong"] += data["total"]["wrong"]
-                if (data.get("shuffle", "no") != "no") and (all_data["shuffle"] != "no"):
+                if (data.get("shuffle", "no") != "no") and (
+                    all_data["shuffle"] != "no"
+                ):
                     all_data["shuffle"] = data.get("shuffle")
-                    
+
     all_data["total"]["acc"] = all_data["total"]["corr"] / (
         all_data["total"]["corr"] + all_data["total"]["wrong"]
     )
