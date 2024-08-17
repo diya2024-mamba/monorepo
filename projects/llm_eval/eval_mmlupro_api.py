@@ -17,6 +17,7 @@ from torch.utils.data import Dataset as TorchDataset
 from tqdm import tqdm
 import textwrap
 
+
 class CustomDataset(TorchDataset):
     def __init__(self, dataset):
         self.dataset = dataset
@@ -156,16 +157,21 @@ def preprocess(df):
         res[each["category"]].append(each)
     return res
 
+
 def make_table(sentences_lists, choice_map="ABCDEFGHIJ") -> str:
-    
-    wrapped_sentences = [textwrap.wrap(sentences, width=100) for sentences in sentences_lists]
+
+    wrapped_sentences = [
+        textwrap.wrap(sentences, width=100) for sentences in sentences_lists
+    ]
     max_len = max(len(sentences) for sentences in wrapped_sentences)
 
     # 글자 수 차이가 날 때 공백 메우기
     for i in range(len(wrapped_sentences)):
         wrapped_sentences[i] += [""] * (max_len - len(wrapped_sentences[i]))
 
-    headers = "| " + " | ".join(choice_map[i] for i in range(len(wrapped_sentences))) + " |\n"
+    headers = (
+        "| " + " | ".join(choice_map[i] for i in range(len(wrapped_sentences))) + " |\n"
+    )
     separators = "| " + " | ".join("-" for _ in range(len(wrapped_sentences))) + " |\n"
 
     markdown_table = headers + separators
@@ -173,6 +179,7 @@ def make_table(sentences_lists, choice_map="ABCDEFGHIJ") -> str:
         markdown_table += "| " + " | ".join(row) + " |\n"
 
     return markdown_table
+
 
 def format_example(args, question, options, cot_content=""):
     if cot_content == "":
@@ -251,7 +258,9 @@ def single_request_dict(args, client, single_question, cot_examples_dict, exist_
         )
     )
     for each in cot_examples:
-        prompt += format_example(args, each["question"], each["options"], each["cot_content"])
+        prompt += format_example(
+            args, each["question"], each["options"], each["cot_content"]
+        )
     input_text = format_example(args, question, options)
     print(input_text)
     try:
@@ -427,7 +436,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("--assigned_subjects", "-a", type=str, default="all")
     parser.add_argument("--batch_size", type=int, default=4)
-    parser.add_argument("--shuffle", type=str, choices=["reverse", "random", "basic"], default="basic")
+    parser.add_argument(
+        "--shuffle", type=str, choices=["reverse", "random", "basic"], default="basic"
+    )
     parser.add_argument("--table", type=bool, choices=[True, False], default=False)
     args = parser.parse_args()
 
