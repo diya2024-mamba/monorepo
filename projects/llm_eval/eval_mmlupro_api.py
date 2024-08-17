@@ -262,7 +262,6 @@ def single_request_dict(args, client, single_question, cot_examples_dict, exist_
             args, each["question"], each["options"], each["cot_content"]
         )
     input_text = format_example(args, question, options)
-    print(input_text)
     try:
         # start = time.time()
         response = call_api(args, client, prompt, input_text)
