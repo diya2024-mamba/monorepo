@@ -3,6 +3,7 @@ import json
 import os
 import random
 import re
+import textwrap
 import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict, Tuple
@@ -177,15 +178,41 @@ def preprocess(df: Dataset, shuffle: str = "no") -> Dict[str, List]:
     return res
 
 
-def format_example(question, options, cot_content=""):
+def make_table(sentences_lists, choice_map="ABCDEFGHIJ") -> str:
+
+    wrapped_sentences = [
+        textwrap.wrap(sentences, width=100) for sentences in sentences_lists
+    ]
+    max_len = max(len(sentences) for sentences in wrapped_sentences)
+
+    # 글자 수 차이가 날 때 공백 메우기
+    for i in range(len(wrapped_sentences)):
+        wrapped_sentences[i] += [""] * (max_len - len(wrapped_sentences[i]))
+
+    headers = (
+        "| " + " | ".join(choice_map[i] for i in range(len(wrapped_sentences))) + " |\n"
+    )
+    separators = "| " + " | ".join("-" for _ in range(len(wrapped_sentences))) + " |\n"
+
+    markdown_table = headers + separators
+    for row in zip(*wrapped_sentences):
+        markdown_table += "| " + " | ".join(row) + " |\n"
+
+    return markdown_table
+
+
+def format_example(args, question, options, cot_content=""):
     if cot_content == "":
         cot_content = "Let's think step by step."
     if cot_content.startswith("A: "):
         cot_content = cot_content[3:]
     example = "Question: {}\nOptions: ".format(question)
     choice_map = "ABCDEFGHIJ"
-    for i, opt in enumerate(options):
-        example += "{}. {}\n".format(choice_map[i], opt)
+    if args.table:
+        example += make_table(options, choice_map)
+    else:
+        for i, opt in enumerate(options):
+            example += "{}. {}\n".format(choice_map[i], opt)
     if cot_content == "":
         example += "Answer: "
     else:
@@ -243,8 +270,10 @@ def single_request_dict(args, client, single_question, cot_examples_dict, exist_
         )
     )
     for each in cot_examples:
-        prompt += format_example(each["question"], each["options"], each["cot_content"])
-    input_text = format_example(question, options)
+        prompt += format_example(
+            args, each["question"], each["options"], each["cot_content"]
+        )
+    input_text = format_example(args, question, options)
     try:
         # start = time.time()
         response = call_api(args, client, prompt, input_text)
@@ -418,7 +447,10 @@ if __name__ == "__main__":
     )
     parser.add_argument("--assigned_subjects", "-a", type=str, default="all")
     parser.add_argument("--batch_size", type=int, default=4)
-    parser.add_argument("--shuffle", type=str, choices=["no", "reverse", "random"], default="no")
+    parser.add_argument(
+        "--shuffle", type=str, choices=["reverse", "random", "no"], default="no"
+    )
+    parser.add_argument("--table", type=bool, choices=[True, False], default=False)
     args = parser.parse_args()
 
     load_dotenv()
