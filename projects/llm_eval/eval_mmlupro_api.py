@@ -6,12 +6,12 @@ import re
 import textwrap
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Dict, Tuple
+from typing import Dict, List, Tuple
 
 import anthropic
 import google.generativeai as genai
 import openai
-from datasets import load_dataset, Dataset
+from datasets import Dataset, load_dataset
 from dotenv import load_dotenv
 from openai import OpenAI
 from torch.utils.data import DataLoader
@@ -159,17 +159,17 @@ def preprocess(df: Dataset, shuffle: str = "no") -> Dict[str, List]:
         if shuffle == "no":
             pass
         elif shuffle == "reverse":
-            each["options"] = each["options"][::-1]            
-            choice_map = "ABCDEFGHIJ"[:len(each["options"])][::-1]
+            each["options"] = each["options"][::-1]
+            choice_map = "ABCDEFGHIJ"[: len(each["options"])][::-1]
 
             each["answer_index"] = choice_map.index(each["answer"])
             each["answer"] = "ABCDEFGHIJ"[each["answer_index"]]
-        else: # shuffle == "random"
+        else:  # shuffle == "random"
             random.seed(42)
             indices = [i for i in range(len(each["options"]))]
             random.shuffle(indices)
 
-            each["options"] = [each["options"][i] for i in indices]            
+            each["options"] = [each["options"][i] for i in indices]
             each["answer_index"] = indices.index(each["answer_index"])
             each["answer"] = "ABCDEFGHIJ"[each["answer_index"]]
 
