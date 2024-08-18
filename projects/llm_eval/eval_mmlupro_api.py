@@ -5,11 +5,12 @@ import random
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
+from typing import List, Dict, Tuple
 
 import anthropic
 import google.generativeai as genai
 import openai
-from datasets import load_dataset
+from datasets import load_dataset, Dataset
 from dotenv import load_dotenv
 from openai import OpenAI
 from torch.utils.data import DataLoader
@@ -131,15 +132,15 @@ def call_api(args, client, instruction, inputs):
     return result
 
 
-def load_mmlu_pro():
+def load_mmlu_pro(shuffle: str = "no") -> Tuple[Dict, Dict]:
     dataset = load_dataset("TIGER-Lab/MMLU-Pro")
     test_df, val_df = dataset["test"], dataset["validation"]
-    test_df = preprocess(test_df)
+    test_df = preprocess(test_df, shuffle)
     val_df = preprocess(val_df)
     return test_df, val_df
 
 
-def preprocess(df):
+def preprocess(df: Dataset, shuffle: str = "no") -> Dict[str, List]:
     res_df = []
     for each in df:
         options = []
@@ -153,7 +154,26 @@ def preprocess(df):
     for each in res_df:
         if each["category"] not in res:
             res[each["category"]] = []
+
+        if shuffle == "no":
+            pass
+        elif shuffle == "reverse":
+            each["options"] = each["options"][::-1]            
+            choice_map = "ABCDEFGHIJ"[:len(each["options"])][::-1]
+
+            each["answer_index"] = choice_map.index(each["answer"])
+            each["answer"] = "ABCDEFGHIJ"[each["answer_index"]]
+        else: # shuffle == "random"
+            random.seed(42)
+            indices = [i for i in range(len(each["options"]))]
+            random.shuffle(indices)
+
+            each["options"] = [each["options"][i] for i in indices]            
+            each["answer_index"] = indices.index(each["answer_index"])
+            each["answer"] = "ABCDEFGHIJ"[each["answer_index"]]
+
         res[each["category"]].append(each)
+
     return res
 
 
@@ -215,12 +235,6 @@ def single_request_dict(args, client, single_question, cot_examples_dict, exist_
     cot_examples = cot_examples_dict[category]
     question = single_question["question"]
     options = single_question["options"]
-
-    if args.shuffle == "reverse":
-        options = options[::-1]
-    elif args.shuffle == "random":
-        random.seed(42)
-        random.shuffle(options)
 
     prompt = (
         "The following are multiple choice questions (with answers) about {}. Think step by"
@@ -290,7 +304,7 @@ def merge_result(res, curr):
 
 def evaluate_batch(args, subjects):
     client = get_client(args)
-    test_df, dev_df = load_mmlu_pro()
+    test_df, dev_df = load_mmlu_pro(shuffle=args.shuffle)
     if not subjects:
         subjects = list(test_df.keys())
     print("assigned subjects", subjects)
@@ -404,7 +418,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--assigned_subjects", "-a", type=str, default="all")
     parser.add_argument("--batch_size", type=int, default=4)
-    parser.add_argument("--shuffle", type=str, choices=["reverse", "random"])
+    parser.add_argument("--shuffle", type=str, choices=["no", "reverse", "random"], default="no")
     args = parser.parse_args()
 
     load_dotenv()
