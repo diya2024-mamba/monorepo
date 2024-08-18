@@ -7,7 +7,7 @@ def merge_output(output_dir):
     outputs = os.listdir(output_dir)
     output_file = os.path.join(output_dir, "all_subjects_summary.json")
 
-    all_data = {"total": {"corr": 0, "wrong": 0, "acc": 0}}
+    all_data = {"total": {"corr": 0, "wrong": 0, "acc": 0}, "shuffle": "no"}
     for file in outputs:
         if "summary" in file:
             chunk_file = os.path.join(output_dir, file)
@@ -15,6 +15,11 @@ def merge_output(output_dir):
                 data = json.load(rf)
                 all_data["total"]["corr"] += data["total"]["corr"]
                 all_data["total"]["wrong"] += data["total"]["wrong"]
+                if (data.get("shuffle", "no") != "no") and (
+                    all_data["shuffle"] != "no"
+                ):
+                    all_data["shuffle"] = data.get("shuffle")
+
     all_data["total"]["acc"] = all_data["total"]["corr"] / (
         all_data["total"]["corr"] + all_data["total"]["wrong"]
     )

@@ -3,13 +3,15 @@ import json
 import os
 import random
 import re
+import textwrap
 import time
 from concurrent.futures import ThreadPoolExecutor
+from typing import Dict, List, Tuple
 
 import anthropic
 import google.generativeai as genai
 import openai
-from datasets import load_dataset
+from datasets import Dataset, load_dataset
 from dotenv import load_dotenv
 from openai import OpenAI
 from torch.utils.data import DataLoader
@@ -41,7 +43,10 @@ def get_client(args):
     # OpenAI API key만 지원 (240810)
     if args.model_name in ["gpt-4", "gpt-4o", "gpt-4o-mini"]:
         openai.api_key = os.getenv("OPENAI_API_KEY")
-        client = openai
+        client = OpenAI(
+            organization=os.getenv("OPENAI_ORGANIZATION"),
+            project=os.getenv("OPENAI_PROJECT"),
+        )
     elif args.model_name in ["deepseek-chat", "deepseek-coder"]:
         client = OpenAI(api_key=API_KEY, base_url="https://api.deepseek.com/")
     elif args.model_name in ["gemini-1.5-flash-latest", "gemini-1.5-pro-latest"]:
@@ -128,15 +133,15 @@ def call_api(args, client, instruction, inputs):
     return result
 
 
-def load_mmlu_pro():
+def load_mmlu_pro(shuffle: str = "no") -> Tuple[Dict, Dict]:
     dataset = load_dataset("TIGER-Lab/MMLU-Pro")
     test_df, val_df = dataset["test"], dataset["validation"]
-    test_df = preprocess(test_df)
+    test_df = preprocess(test_df, shuffle)
     val_df = preprocess(val_df)
     return test_df, val_df
 
 
-def preprocess(df):
+def preprocess(df: Dataset, shuffle: str = "no") -> Dict[str, List]:
     res_df = []
     for each in df:
         options = []
@@ -150,19 +155,64 @@ def preprocess(df):
     for each in res_df:
         if each["category"] not in res:
             res[each["category"]] = []
+
+        if shuffle == "no":
+            pass
+        elif shuffle == "reverse":
+            each["options"] = each["options"][::-1]
+            choice_map = "ABCDEFGHIJ"[: len(each["options"])][::-1]
+
+            each["answer_index"] = choice_map.index(each["answer"])
+            each["answer"] = "ABCDEFGHIJ"[each["answer_index"]]
+        else:  # shuffle == "random"
+            random.seed(42)
+            indices = [i for i in range(len(each["options"]))]
+            random.shuffle(indices)
+
+            each["options"] = [each["options"][i] for i in indices]
+            each["answer_index"] = indices.index(each["answer_index"])
+            each["answer"] = "ABCDEFGHIJ"[each["answer_index"]]
+
         res[each["category"]].append(each)
+
     return res
 
 
-def format_example(question, options, cot_content=""):
+def make_table(sentences_lists, choice_map="ABCDEFGHIJ") -> str:
+
+    wrapped_sentences = [
+        textwrap.wrap(sentences, width=100) for sentences in sentences_lists
+    ]
+    max_len = max(len(sentences) for sentences in wrapped_sentences)
+
+    # 글자 수 차이가 날 때 공백 메우기
+    for i in range(len(wrapped_sentences)):
+        wrapped_sentences[i] += [""] * (max_len - len(wrapped_sentences[i]))
+
+    headers = (
+        "| " + " | ".join(choice_map[i] for i in range(len(wrapped_sentences))) + " |\n"
+    )
+    separators = "| " + " | ".join("-" for _ in range(len(wrapped_sentences))) + " |\n"
+
+    markdown_table = headers + separators
+    for row in zip(*wrapped_sentences):
+        markdown_table += "| " + " | ".join(row) + " |\n"
+
+    return markdown_table
+
+
+def format_example(args, question, options, cot_content=""):
     if cot_content == "":
         cot_content = "Let's think step by step."
     if cot_content.startswith("A: "):
         cot_content = cot_content[3:]
     example = "Question: {}\nOptions: ".format(question)
     choice_map = "ABCDEFGHIJ"
-    for i, opt in enumerate(options):
-        example += "{}. {}\n".format(choice_map[i], opt)
+    if args.table:
+        example += make_table(options, choice_map)
+    else:
+        for i, opt in enumerate(options):
+            example += "{}. {}\n".format(choice_map[i], opt)
     if cot_content == "":
         example += "Answer: "
     else:
@@ -212,6 +262,7 @@ def single_request_dict(args, client, single_question, cot_examples_dict, exist_
     cot_examples = cot_examples_dict[category]
     question = single_question["question"]
     options = single_question["options"]
+
     prompt = (
         "The following are multiple choice questions (with answers) about {}. Think step by"
         ' step and then output the answer in the format of "The answer is (X)" at the end.\n\n'.format(
@@ -219,8 +270,10 @@ def single_request_dict(args, client, single_question, cot_examples_dict, exist_
         )
     )
     for each in cot_examples:
-        prompt += format_example(each["question"], each["options"], each["cot_content"])
-    input_text = format_example(question, options)
+        prompt += format_example(
+            args, each["question"], each["options"], each["cot_content"]
+        )
+    input_text = format_example(args, question, options)
     try:
         # start = time.time()
         response = call_api(args, client, prompt, input_text)
@@ -280,7 +333,7 @@ def merge_result(res, curr):
 
 def evaluate_batch(args, subjects):
     client = get_client(args)
-    test_df, dev_df = load_mmlu_pro()
+    test_df, dev_df = load_mmlu_pro(shuffle=args.shuffle)
     if not subjects:
         subjects = list(test_df.keys())
     print("assigned subjects", subjects)
@@ -330,10 +383,10 @@ def evaluate_batch(args, subjects):
                     else:
                         category_record[category]["wrong"] += 1
                     save_res(res, output_res_path)
-                    save_summary(category_record, output_summary_path)
+                    save_summary(category_record, output_summary_path, args.shuffle)
                     res, category_record = update_result(output_res_path)
         save_res(res, output_res_path)
-        save_summary(category_record, output_summary_path)
+        save_summary(category_record, output_summary_path, args.shuffle)
 
 
 def save_res(res, output_res_path):
@@ -350,7 +403,7 @@ def save_res(res, output_res_path):
         fo.write(json.dumps(res))
 
 
-def save_summary(category_record, output_summary_path):
+def save_summary(category_record, output_summary_path, shuffle=None):
     total_corr = 0.0
     total_wrong = 0.0
     for k, v in category_record.items():
@@ -362,6 +415,10 @@ def save_summary(category_record, output_summary_path):
         total_wrong += v["wrong"]
     acc = total_corr / (total_corr + total_wrong)
     category_record["total"] = {"corr": total_corr, "wrong": total_wrong, "acc": acc}
+
+    if shuffle is not None:
+        category_record["shuffle"] = shuffle
+
     with open(output_summary_path, "w") as fo:
         fo.write(json.dumps(category_record))
 
@@ -390,6 +447,10 @@ if __name__ == "__main__":
     )
     parser.add_argument("--assigned_subjects", "-a", type=str, default="all")
     parser.add_argument("--batch_size", type=int, default=4)
+    parser.add_argument(
+        "--shuffle", type=str, choices=["reverse", "random", "no"], default="no"
+    )
+    parser.add_argument("--table", type=bool, choices=[True, False], default=False)
     args = parser.parse_args()
 
     load_dotenv()
