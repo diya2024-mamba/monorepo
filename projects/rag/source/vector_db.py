@@ -47,7 +47,7 @@ def search_metadata_json(script_id, json_path):
 
 
 if __name__ == "__main__":
-    doc = preprocess_metadata("../data/ko_script.txt")
+    doc = preprocess_metadata("../data/ko_script3.txt")
     # faiss
     faiss_db = FAISS.from_documents(
         doc, OpenAIEmbeddings(model="text-embedding-3-large")
@@ -55,3 +55,4 @@ if __name__ == "__main__":
     faiss_db.save_local("../db/ko_faiss_base")
     # BM_25
     kiwi_bm25_db(doc, "../db/ko_bm25_base.pkl")
+    
