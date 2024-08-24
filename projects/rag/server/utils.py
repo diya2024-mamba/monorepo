@@ -12,6 +12,7 @@ def load_env() -> None:
     load_dotenv()
     env_variables = [
         "OPENAI_API_KEY",
+        "RUNPOD_API_KEY",
         "FILE_SERVER_URI",
         "FILE_SERVER_USERNAME",
         "FILE_SERVER_PASSWORD",

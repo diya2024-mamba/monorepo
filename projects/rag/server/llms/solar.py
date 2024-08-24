@@ -4,6 +4,9 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
+from utils import load_env
+
+load_env()
 
 API_KEY = os.getenv("RUNPOD_API_KEY")
 ENDPOINT = "3pnhsvccplyz39"
