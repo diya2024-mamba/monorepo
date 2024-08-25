@@ -1,4 +1,5 @@
 import logging
+import json
 from functools import partial
 
 from langchain.schema import BaseRetriever
@@ -19,14 +20,51 @@ class GraphState(TypedDict):
     generation: str
 
 
-def retrieve(state: GraphState, retriever: BaseRetriever) -> GraphState:
+def script_filter(documents: list, character: str, front_script=1 ,back_script=4):
+    path= 'data/ko_script3.json'
+    with open(path, 'r', encoding='utf-8') as f:
+        script = json.load(f)
+
+    character_find = False
+    for doc in documents:
+        script_id = int(doc.metadata["script_id"])
+
+        # 대본 뒷부분 캐릭터 검색
+        for i in range(1,back_script):
+            if len(script) < script_id + i:
+                break
+            elif script[str(script_id + i)]['character'] == character:
+                character_find = True
+                break
+
+        # 캐릭터가 있으면 대본 반환
+        if character_find:
+            new_script=''
+
+            for i in range(front_script,0,-1):
+                if script_id - i < 0:
+                    continue
+                new_script += script[str(script_id - i)]['character'] + ' : ' + script[str(script_id - i)]['content'] + '\n'
+            
+            for i in range(back_script+1):
+                if len(script) < script_id + i:
+                    break
+                new_script += script[str(script_id + i)]['character'] + ' : ' + script[str(script_id + i)]['content'] + '\n'
+            return new_script
+        
+    return documents
+
+
+def retrieve(state: GraphState, retriever: BaseRetriever, filter=True) -> GraphState:
     logging.debug("---RETRIEVE---")
     user_question = state["user_question"]
 
     documents = retriever.invoke(user_question)
     logging.debug("Retrieved documents: %s", documents)
-
-    state["documents"] = documents
+    if filter:
+        state["documents"] = script_filter(documents, state["user_character"])
+    else:
+        state["documents"] = documents
     return state
 
 
