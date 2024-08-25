@@ -10,6 +10,22 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+function getApiUrl() {
+    return 'http://localhost:8000';
+}
+
+// Storing the object
+function storeObject(key, object) {
+  sessionStorage.setItem(key, JSON.stringify(object));
+}
+
+// Retrieving the object
+function getObject(key) {
+  const item = sessionStorage.getItem(key);
+  return item ? JSON.parse(item) : null;
+}
+// Usage example:
+const API_URL = getApiUrl();
 // Initialize the chat page functionality
 function initializeChatPage() {
   // Select necessary DOM elements
@@ -19,9 +35,11 @@ function initializeChatPage() {
   const botNameSelect = document.querySelector("#bot-name-select");
   const userNameSelect = document.querySelector("#user-name-select");
 
+  const API_URL = getApiUrl(); // Use the new getApiUrl function
+
   // Initialize variables
   let BOT_NAME, PERSON_NAME;
-  const USE_API = false; // Set this to true when API is ready
+  const USE_API = true; // Set this to true when API is ready
   const PERSON_IMG = "./static/images/user.png";
 
   // Predefined bot messages for local response generation
@@ -95,13 +113,19 @@ function initializeChatPage() {
 
   // Fetch bot response from API (when enabled)
   function fetchBotResponseFromAPI(userMessage) {
-    return fetch('http://your-api-url/chat', {
+    return fetch(`${API_URL}/invoke`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: userMessage, botName: BOT_NAME })
+      body: JSON.stringify({
+        llm: "openai",
+        retriever: "metadata",
+        rag: "base",
+        character: BOT_NAME,
+        prompt: userMessage
+      })
     })
     .then(response => response.json())
-    .then(data => data.reply)
+    .then(data => data.generation) // Assuming the API returns the response in an 'output' field
     .catch(error => {
       console.error('Error fetching bot response:', error);
       return "Sorry, I couldn't connect to the server.";
@@ -138,7 +162,7 @@ function initializeChatPage() {
 // Initialize the A/B testing page functionality
 function initializeABTestPage() {
   const characterSelect = document.getElementById("character_name");
-  const votes = { "Model A": 0, "Model B": 0 };
+  const API_URL = getApiUrl();
 
   fetchBotNames();
   setupEventListeners();
@@ -158,8 +182,8 @@ function initializeABTestPage() {
   // Set up event listeners for submit and vote buttons
   function setupEventListeners() {
     document.getElementById("submit_btn").addEventListener("click", handleSubmit);
-    document.getElementById("vote_a_btn").addEventListener("click", () => handleVote("Model A"));
-    document.getElementById("vote_b_btn").addEventListener("click", () => handleVote("Model B"));
+    document.getElementById("vote_a_btn").addEventListener("click", () => handleVote("A"));
+    document.getElementById("vote_b_btn").addEventListener("click", () => handleVote("B"));
   }
 
   // Handle submission of user input for A/B testing
@@ -167,22 +191,62 @@ function initializeABTestPage() {
     const inputText = document.getElementById("input_text").value;
     const characterName = characterSelect.value;
 
-    document.getElementById("output_a").value = chatbotModel("A", inputText, characterName);
-    document.getElementById("output_b").value = chatbotModel("B", inputText, characterName);
-  }
+    fetch(`${API_URL}/random`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        character: characterName,
+        prompt: inputText
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById("output_a").value = data.A.output.generation;
+      document.getElementById("output_b").value = data.B.output.generation;
+      const configA = {
+        "llm" : data.A.llm,
+        "retriever" : data.A.retriever,
+        "rag" : data.A.rag,
+      }
+      const configB = {
+        "llm" : data.B.llm,
+        "retriever" : data.B.retriever,
+        "rag" : data.B.rag,
+      }
+      storeObject("configA",configA);
+      storeObject("configB",configB);
 
-  // Generate responses for both chatbot models
-  function chatbotModel(model, inputText, characterName) {
-    return `${characterName} (Model ${model}) responds: ${inputText}`;
+    })
+    .catch(error => {
+      console.error('Error fetching responses:', error);
+      alert('Failed to get responses. Please try again.');
+    });
   }
 
   // Handle voting for a particular model
   function handleVote(model) {
-    votes[model]++;
-    const voteMessage = `You voted for ${model}! Total votes: ${votes[model]}`;
-
-    const messageBox = document.getElementById(`vote_${model.toLowerCase()}_message`);
-    messageBox.value = voteMessage;
-    messageBox.classList.remove("hidden");
+    const configA = getObject("configA");
+    const configB = getObject("configB");
+    const winner = model === "A" ? configA : configB;
+    const loser = model === "A" ? configB : configA;
+    fetch(`${API_URL}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        winner: winner,
+        loser: loser
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      alert(data.message); // Display the "투표가 완료되었습니다." message
+      const messageBox = document.getElementById(`vote_${model.toLowerCase()}_message`);
+      messageBox.value = `You voted for Model ${model}!`;
+      messageBox.classList.remove("hidden");
+    })
+    .catch(error => {
+      console.error('Error submitting vote:', error);
+      alert('Failed to submit vote. Please try again.');
+    });
   }
 }
