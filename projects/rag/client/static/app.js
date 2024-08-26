@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function getApiUrl() {
-    return 'http://localhost:8000';
+    return 'http://158.247.203.184:8000';
 }
 
 // Storing the object
