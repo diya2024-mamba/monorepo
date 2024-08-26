@@ -27,7 +27,7 @@ jobs:
           host: ${{ secrets.RAG_SERVER_HOST }}
           username: github
           key: ${{ secrets.RAG_SERVER_KEY }}
-          source: ./projects/rag/*
+          source: projects/rag/*
           target: ~/rag/
 
       - name: SSH into server and deploy
