@@ -27,8 +27,8 @@ jobs:
           host: ${{ secrets.RAG_SERVER_HOST }}
           username: github
           key: ${{ secrets.RAG_SERVER_KEY }}
-          source: ./projects/rag
-          target: ~/rag
+          source: ./projects/rag/*
+          target: ~/rag/
 
       - name: SSH into server and deploy
         uses: appleboy/ssh-action@v0.1.5
