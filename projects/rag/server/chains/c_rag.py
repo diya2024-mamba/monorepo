@@ -157,7 +157,7 @@ def decide_to_generate(state):
 
 def generate(state: GraphState, llm: BaseLanguageModel) -> GraphState:
     logger.debug("---GENERATE---")
-    user_character = state["user_character"]
+    ai_character = state["ai_character"]
     user_question = state["user_question"]
     documents = state["documents"]
 
@@ -178,7 +178,7 @@ def generate(state: GraphState, llm: BaseLanguageModel) -> GraphState:
     chain = prompt | llm | StrOutputParser()
     generation = chain.invoke(
         {
-            "character": user_character,
+            "character": ai_character,
             "document": documents,
             "question": user_question,
         }
