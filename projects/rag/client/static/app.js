@@ -187,10 +187,22 @@ function initializeABTestPage() {
     document.getElementById("vote_b_btn").addEventListener("click", () => handleVote("B"));
   }
 
+  function showSpinner() {
+    document.getElementById("spinner").classList.remove("hidden");
+    document.getElementById("submit_btn").disabled = true;
+  }
+
+  function hideSpinner() {
+    document.getElementById("spinner").classList.add("hidden");
+    document.getElementById("submit_btn").disabled = false;
+  }
+
   // Handle submission of user input for A/B testing
   function handleSubmit() {
     const inputText = document.getElementById("input_text").value;
     const characterName = characterSelect.value;
+
+    showSpinner();
 
     fetch(`${API_URL}/random`, {
       method: 'POST',
@@ -221,7 +233,11 @@ function initializeABTestPage() {
     .catch(error => {
       console.error('Error fetching responses:', error);
       alert('Failed to get responses. Please try again.');
+    })
+    .finally(() => {
+      hideSpinner();
     });
+    ;
   }
 
   // Handle voting for a particular model
