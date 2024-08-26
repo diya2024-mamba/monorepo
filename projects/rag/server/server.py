@@ -5,15 +5,14 @@ import os
 import random
 import secrets
 from enum import StrEnum
-from langgraph.errors import GraphRecursionError
-from langgraph.prebuilt import create_react_agent
 
-from chains import base_graph
+from chains import base_graph, crag_graph, srag_graph
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
-from chains import base_graph, crag_graph, srag_graph
+from langgraph.errors import GraphRecursionError
+from langgraph.prebuilt import create_react_agent
 from llms import ChatOpenAI, Solar
 from pydantic import BaseModel
 from retrievers import BM25VectorStore, MetadataVectorStore, TextChunkVectorStore
@@ -116,8 +115,7 @@ async def invoke(input: InvokeInput) -> JSONResponse:
 
     try:
         output = recursion_graph.invoke(
-            {"messages": [("human", query)]},
-            {"recursion_limit": RECURSION_LIMIT}
+            {"messages": [("human", query)]}, {"recursion_limit": RECURSION_LIMIT}
         )
     except GraphRecursionError:
         output = "Agent stopped due to max iterations."

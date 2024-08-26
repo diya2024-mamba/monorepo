@@ -5,8 +5,8 @@ from langchain.schema import BaseRetriever
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import Runnable
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.runnables import Runnable
 from langgraph.graph import END, START, StateGraph
 from typing_extensions import TypedDict
 
@@ -45,24 +45,27 @@ class GradeAnswer(BaseModel):
 def grade_documents(state: GraphState, llm: BaseLanguageModel) -> GraphState:
     logging.debug("---CHECK DOCUMENT RELEVANCE TO QUESTION---")
 
-    user_character = state['user_character']
-    user_question = state['user_question']
-    documents = state['documents']
+    user_character = state["user_character"]
+    user_question = state["user_question"]
+    documents = state["documents"]
 
     # LLM with function call
     structured_llm_grader = llm.with_structured_output(GradeDocuments)
 
     # Prompt
     system = """
-    You are a grader assessing relevance of a retrieved document to a user question. \n 
+    You are a grader assessing relevance of a retrieved document to a user question. \n
     If the document contains keyword(s) or semantic meaning related to the question, grade it as relevant. \n
     Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.
     """
     grade_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system),
-            ("human", "<<<Character>>> {character} \n\n \
-                    <<<Retrieved document>>> \n\n {document} \n\n <<<User question>>> {question}"),
+            (
+                "human",
+                "<<<Character>>> {character} \n\n \
+                    <<<Retrieved document>>> \n\n {document} \n\n <<<User question>>> {question}",
+            ),
         ]
     )
     retrieval_grader = grade_prompt | structured_llm_grader
@@ -71,7 +74,11 @@ def grade_documents(state: GraphState, llm: BaseLanguageModel) -> GraphState:
     conversation = "Yes"
     for d in documents:
         score = retrieval_grader.invoke(
-            {"character": user_character, "question": user_question, "document": d.page_content}
+            {
+                "character": user_character,
+                "question": user_question,
+                "document": d.page_content,
+            }
         )
         grade = score.binary_score
         if grade == "yes":
@@ -82,8 +89,8 @@ def grade_documents(state: GraphState, llm: BaseLanguageModel) -> GraphState:
             logger.debug("---GRADE: DOCUMENT NOT RELEVANT---")
             continue
 
-    state['documents'] = filtered_docs
-    state['search_conversation'] = conversation
+    state["documents"] = filtered_docs
+    state["search_conversation"] = conversation
 
     return state
 
@@ -103,10 +110,12 @@ def search_conversation(state: GraphState, llm: BaseLanguageModel) -> GraphState
     logger.debug("---SEARCH CONVERSATIONS---")
     # movie = state['movie']        # 해리포터로 고정
     movie = "해리포터"
-    user_character = state['user_character']
+    user_character = state["user_character"]
 
     # Prompt
-    conver_system_prompt = """당신은 오덕후이다. 유명한 영화의 캐릭터멸 대사들을 능숙히 발화할 수 있다."""
+    conver_system_prompt = (
+        """당신은 오덕후이다. 유명한 영화의 캐릭터멸 대사들을 능숙히 발화할 수 있다."""
+    )
     conver_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", conver_system_prompt),
@@ -119,15 +128,17 @@ def search_conversation(state: GraphState, llm: BaseLanguageModel) -> GraphState
     )
 
     conver_generation = conver_prompt | llm | StrOutputParser()
-    character_conver = conver_generation.invoke({"movie": movie, "character": user_character})
-    state['character_conversation'] = character_conver
+    character_conver = conver_generation.invoke(
+        {"movie": movie, "character": user_character}
+    )
+    state["character_conversation"] = character_conver
     return state
 
 
 def transform_query(state: GraphState, llm: BaseLanguageModel) -> GraphState:
     logger.debug("---TRANSFORM QUERY---")
     user_question = state["user_question"]
-    character_conversation = state['character_conversation']
+    character_conversation = state["character_conversation"]
 
     # Prompt
     re_write_system_prompt = """당신은 질문을 변형하는 데 능숙하다. 주어친 대사를 참고하여 기존 대사를 변형하여라"""
@@ -144,9 +155,11 @@ def transform_query(state: GraphState, llm: BaseLanguageModel) -> GraphState:
 
     question_rewriter = re_write_prompt | llm | StrOutputParser()
     # Re-write question
-    better_question = question_rewriter.invoke({"character_conver": character_conversation, "question": user_question})
+    better_question = question_rewriter.invoke(
+        {"character_conver": character_conversation, "question": user_question}
+    )
 
-    state['user_question'] = better_question
+    state["user_question"] = better_question
     return state
 
 
@@ -224,7 +237,7 @@ def verification(state: GraphState, llm: BaseLanguageModel) -> GraphState:
                 - 위 대화에서 'AI'의 대답이 흐름 상 올바르거나 창의적인지 확인하라.
                 - AI의 응답이 올바르거나 창의적일 경우 yes, 그렇지 않을 경우 no를 생성하라.
 
-                응답: 
+                응답:
                 """,
             ),
         ]
@@ -241,7 +254,7 @@ def verification(state: GraphState, llm: BaseLanguageModel) -> GraphState:
         logger.debug("---BAD GENERATION---")
         check = "no"
 
-    state['answer_check'] = check
+    state["answer_check"] = check
     return state
 
 
@@ -254,16 +267,23 @@ def decide_to_end(state):
     else:
         return "generate"
 
+
 def get_graph(llm: BaseLanguageModel, retriever: BaseRetriever) -> Runnable:
     workflow = StateGraph(GraphState)
 
     # Define the nodes
     workflow.add_node("retrieve", partial(retrieve, retriever=retriever))  # retrieve
-    workflow.add_node("grade_documents", partial(grade_documents, llm=llm))  # grade documents
+    workflow.add_node(
+        "grade_documents", partial(grade_documents, llm=llm)
+    )  # grade documents
     workflow.add_node("generate", partial(grade_documents, llm=llm))  # generatae
-    workflow.add_node("find_conversation", partial(search_conversation, llm=llm))  # search_conversation
-    workflow.add_node("transform_query", partial(transform_query, llm=llm))  # transform_query
-    workflow.add_node("end_check", partial(verification, llm=llm)) # verification
+    workflow.add_node(
+        "find_conversation", partial(search_conversation, llm=llm)
+    )  # search_conversation
+    workflow.add_node(
+        "transform_query", partial(transform_query, llm=llm)
+    )  # transform_query
+    workflow.add_node("end_check", partial(verification, llm=llm))  # verification
 
     # Define the edges
     workflow.add_edge(START, "retrieve")
@@ -280,12 +300,7 @@ def get_graph(llm: BaseLanguageModel, retriever: BaseRetriever) -> Runnable:
     workflow.add_edge("transform_query", "retrieve")
     workflow.add_edge("generate", "end_check")
     workflow.add_conditional_edges(
-        "end_check",
-        decide_to_end,
-        {
-            "generate": "generate",
-            "end": END       
-        }
+        "end_check", decide_to_end, {"generate": "generate", "end": END}
     )
 
     return workflow.compile()
