@@ -1,0 +1,43 @@
+name: Deploy RAG Server
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "projects/rag/client/**"
+      - "projects/rag/server/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > projects/rag/.env
+          echo "RUNPOD_API_KEY=${{ secrets.RUNPOD_API_KEY }}" >> projects/rag/.env
+          echo "SERVER_PASSWORD=${{ secrets.RAG_SERVER_PASSWORD }}" >> projects/rag/.env
+
+      - name: Copy repository to server
+        uses: appleboy/scp-action@v0.1.0
+        with:
+          host: ${{ secrets.RAG_SERVER_HOST }}
+          username: github
+          key: ${{ secrets.RAG_SERVER_KEY }}
+          source: projects/rag
+          target: ~/monorepo
+
+      - name: SSH into server and deploy
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.RAG_SERVER_HOST }}
+          username: github
+          key: ${{ secrets.RAG_SERVER_KEY }}
+          script: |
+            cd ~/monorepo/projects/rag
+            docker compose build
+            docker compose down
+            docker compose up -d

@@ -1,32 +1,50 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My App</title>
-    <link rel="stylesheet" href="./static/style.css">
+    <title>HarryPotterChat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
 </head>
-<body>
-<script src="./static/app.js"></script>
-<section class="msger">
-    <header class="msger-header">
-      <div class="msger-header-title">
-        <i class="fas fa-comment-alt"></i> HarryPotterChat
-      </div>
-      <div class="msger-header-options">
-        <span><i class="fas fa-cog"></i></span>
-        <select id="bot-name-select">
-        </select>
-      </div>
-    </header>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <div class="ab-test-container fixed top-4 right-4 z-50">
+        <a href="/ab_test" class="msger-abtest-link bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded shadow transition duration-300">
+            Go to A/B Testing
+        </a>
+    </div>
 
-    <main class="msger-chat">
-    </main>
+    <section class="msger flex-grow flex flex-col max-w-4xl mx-auto w-full p-4">
+        <div class="bg-white shadow-lg rounded-lg flex flex-col h-[80vh]">
+            <header class="msger-header bg-gray-800 text-white p-4 rounded-t-lg">
+                <div class="flex justify-between items-center">
+                    <div class="msger-header-title text-xl font-bold">
+                        <i class="fas fa-comment-alt mr-2"></i> HarryPotterChat
+                    </div>
+                    <div class="msger-header-options flex items-center space-x-2 text-sm">
+                        <span>I am</span>
+                        <select id="user-name-select" class="bg-gray-700 rounded p-1"></select>
+                        <span>talking to</span>
+                        <select id="bot-name-select" class="bg-gray-700 rounded p-1"></select>
+                    </div>
+                </div>
+            </header>
 
-    <form class="msger-inputarea">
-      <input type="text" class="msger-input" placeholder="Enter your message...">
-      <button type="submit" class="msger-send-btn">Send</button>
-    </form>
-</section>
+            <main class="msger-chat flex-grow p-4 overflow-y-auto">
+                <!-- Chat messages will be inserted here -->
+            </main>
+
+            <form class="msger-inputarea border-t border-gray-200 p-4">
+                <div class="flex space-x-2">
+                    <input type="text" class="msger-input flex-grow border rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your message...">
+                    <button type="submit" class="msger-send-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300">
+                        Send
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <script src="/client/static/app.js"></script>
 </body>
 </html>
