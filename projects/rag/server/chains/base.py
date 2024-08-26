@@ -1,5 +1,5 @@
-import logging
 import json
+import logging
 from functools import partial
 
 from langchain.schema import BaseRetriever
@@ -8,6 +8,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from langgraph.graph import END, START, StateGraph
+from retrievers.metadata import MetadataVectorStore
 from typing_extensions import TypedDict
 
 logger = logging.getLogger(__name__)
@@ -20,53 +21,61 @@ class GraphState(TypedDict):
     generation: str
 
 
-def make_script(script_id, script, front_script=1 ,back_script=3)-> str:
-    new_script=''
-    for i in range(front_script,0,-1):
+def make_script(script_id, script, front_script=1, back_script=3) -> str:
+    new_script = ""
+    for i in range(front_script, 0, -1):
         if script_id - i < 0:
             continue
-        new_script += script[str(script_id - i)]['character'] + ' : ' + script[str(script_id - i)]['content'] + '\n'
-    
-    for i in range(back_script+1):
+        new_script += (
+            script[str(script_id - i)]["character"]
+            + " : "
+            + script[str(script_id - i)]["content"]
+            + "\n"
+        )
+
+    for i in range(back_script + 1):
         if len(script) < script_id + i:
             break
-        new_script += script[str(script_id + i)]['character'] + ' : ' + script[str(script_id + i)]['content'] + '\n'
-    
+        new_script += (
+            script[str(script_id + i)]["character"]
+            + " : "
+            + script[str(script_id + i)]["content"]
+            + "\n"
+        )
+
     return new_script
 
 
-def check_character(documents: list, script: json, character, back_script=3)-> list:
+def check_character(documents: list, script: json, character, back_script=3) -> list:
     doc_index = []
     for idx, doc in enumerate(documents):
         script_id = int(doc.metadata["script_id"])
 
         # 대본 뒷부분 캐릭터 검색
-        for i in range(1,back_script+1):
+        for i in range(1, back_script + 1):
             if len(script) < script_id + i:
                 break
-            elif script[str(script_id + i)]['character'] == character:
+            elif script[str(script_id + i)]["character"] == character:
                 doc_index.append(idx)
                 break
     return [documents[i] for i in doc_index]
 
 
-def script_filter(documents: list, character: str, front_script=1 ,back_script=3):
-    path= 'data/ko_script3.json'
-    with open(path, 'r', encoding='utf-8') as f:
+def script_filter(documents: list, character: str, front_script=1, back_script=3):
+    path = "data/ko_script3.json"
+    with open(path, "r", encoding="utf-8") as f:
         script = json.load(f)
 
     new_documents = check_character(documents, script, character)
     if new_documents:
         documents = new_documents
-    
+
     output = []
     for doc in documents:
         script_id = int(doc.metadata["script_id"])
-        output.append(make_script(script_id, script, front_script ,back_script))
+        output.append(make_script(script_id, script, front_script, back_script))
 
     return output
-  
-    
 
 
 def retrieve(state: GraphState, retriever: BaseRetriever, filter=True) -> GraphState:
@@ -120,7 +129,14 @@ def get_graph(llm: BaseLanguageModel, retriever: BaseRetriever) -> Runnable:
     workflow = StateGraph(GraphState)
 
     # Define the nodes
-    workflow.add_node("retrieve", partial(retrieve, retriever=retriever))
+    if isinstance(retriever, MetadataVectorStore):
+        workflow.add_node(
+            "retrieve", partial(retrieve, retriever=retriever, filter=True)
+        )
+    else:
+        workflow.add_node(
+            "retrieve", partial(retrieve, retriever=retriever, filter=False)
+        )
     workflow.add_node("generate", partial(generate, llm=llm))
 
     # Define the edges
