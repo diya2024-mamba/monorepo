@@ -3,10 +3,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const pathname = window.location.pathname;
 
   // Route to the appropriate initialization function based on the current page
-  if (pathname.endsWith("index.html")) {
-    initializeChatPage();
-  } else if (pathname.endsWith("static/ab_test.html")) {
+  if (pathname.endsWith("ab_test")) {
     initializeABTestPage();
+  }
+  else {
+    initializeChatPage();
   }
 });
 
@@ -40,7 +41,7 @@ function initializeChatPage() {
   // Initialize variables
   let BOT_NAME, PERSON_NAME;
   const USE_API = true; // Set this to true when API is ready
-  const PERSON_IMG = "./static/images/user.png";
+  const PERSON_IMG = "/client/static/images/user.png";
 
   // Predefined bot messages for local response generation
   const BOT_MSGS = [
@@ -57,7 +58,7 @@ function initializeChatPage() {
 
   // Fetch bot names from JSON file and populate select options
   function fetchBotNames() {
-    fetch('./static/botNames.json')
+    fetch('/client/static/botNames.json')
       .then(response => response.json())
       .then(data => {
         populateSelectOptions(data.botNames);
@@ -95,7 +96,7 @@ function initializeChatPage() {
 
   // Generate and append bot's response
   function handleBotResponse(userMessage) {
-    const BOT_IMG = `./static/images/bot_profile/${BOT_NAME}.png`;
+    const BOT_IMG = `/client/static/images/bot_profile/${BOT_NAME}.png`;
     const botMessage = USE_API ?
       fetchBotResponseFromAPI(userMessage) :
       getLocalBotResponse();
@@ -169,7 +170,7 @@ function initializeABTestPage() {
 
   // Fetch bot names and populate the character select dropdown
   function fetchBotNames() {
-    fetch('./botNames.json')
+    fetch('/client/static/botNames.json')
       .then(response => response.json())
       .then(data => {
         data.botNames.forEach(name => {

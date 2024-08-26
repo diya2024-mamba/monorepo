@@ -1,17 +1,51 @@
 #!/usr/bin/env python
 import asyncio
 import logging
+import os
 import random
+import secrets
 from enum import StrEnum
 
 from chains import base_graph
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.staticfiles import StaticFiles
 from llms import ChatOpenAI, Solar
 from pydantic import BaseModel
 from retrievers import BM25VectorStore, MetadataVectorStore, TextChunkVectorStore
 
 app = FastAPI(title="LangChain Server for RAG")
+
+security = HTTPBasic()
+
+client_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "client")
+app.mount("/client", StaticFiles(directory=client_path), name="client")
+
+
+def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_password = secrets.compare_digest(
+        credentials.password,
+        os.getenv("SERVER_PASSWORD"),
+    )
+    if not correct_password:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.password
+
+
+# frontend
+@app.get("/")
+def read_root(password: str = Depends(authenticate)):
+    return FileResponse(os.path.join(client_path, "index.html"))
+
+
+@app.get("/ab_test")
+def read_ab_test(password: str = Depends(authenticate)):
+    return FileResponse(os.path.join(client_path, "static", "ab_test.html"))
 
 
 class LLM(StrEnum):
@@ -139,6 +173,9 @@ class VoteInput(BaseModel):
 
 # logger for votes
 vote_logger = logging.getLogger("vote_logger")
+vote_logger.setLevel(logging.INFO)
+vote_logger.propagate = False
+
 file_handler = logging.FileHandler("votes.log")
 file_handler.setLevel(logging.INFO)
 formatter = logging.Formatter("[VOTE] %(asctime)s - %(message)s")

@@ -13,9 +13,7 @@ def load_env() -> None:
     env_variables = [
         "OPENAI_API_KEY",
         "RUNPOD_API_KEY",
-        "FILE_SERVER_URI",
-        "FILE_SERVER_USERNAME",
-        "FILE_SERVER_PASSWORD",
+        "SERVER_PASSWORD",
     ]
     for var in env_variables:
         if os.environ.get(var) is None:
