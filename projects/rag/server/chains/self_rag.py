@@ -17,6 +17,12 @@ class GraphState(TypedDict):
     user_question: str
     user_character: str
     documents: list[str]
+
+    search_conversation: str
+    character_conversation: str
+
+    ai_character: str
+    # movie: str        # 해리포터로 고정
     generation: str
 
 
@@ -95,7 +101,8 @@ def retrieve(state: GraphState, retriever: BaseRetriever) -> GraphState:
 
 def search_conversation(state: GraphState, llm: BaseLanguageModel) -> GraphState:
     logger.debug("---SEARCH CONVERSATIONS---")
-    movie = state['movie']
+    # movie = state['movie']        # 해리포터로 고정
+    movie = "해리포터"
     user_character = state['user_character']
 
     # Prompt
