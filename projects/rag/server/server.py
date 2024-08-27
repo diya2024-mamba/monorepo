@@ -73,7 +73,7 @@ class InvokeInput(BaseModel):
     rag: RAG
     character: str
     prompt: str
-
+    
 
 @app.post("/invoke")
 async def invoke(input: InvokeInput) -> JSONResponse:
@@ -106,7 +106,6 @@ async def invoke(input: InvokeInput) -> JSONResponse:
             raise ValueError(f"Invalid RAG: {input.rag}")
 
     RECURSION_LIMIT = 2 * 3 + 1
-    recursion_graph = create_react_agent(graph)
 
     query = {
         "user_question": input.prompt,
@@ -114,18 +113,10 @@ async def invoke(input: InvokeInput) -> JSONResponse:
     }
 
     try:
-        output = recursion_graph.invoke(
-            {"messages": [("human", query)]}, {"recursion_limit": RECURSION_LIMIT}
-        )
+        output = graph.invoke(query, {"recursion_limit": RECURSION_LIMIT})
     except GraphRecursionError:
         output = "Agent stopped due to max iterations."
 
-    # output = graph.invoke(
-    #     {
-    #         "user_question": input.prompt,
-    #         "user_character": input.character,
-    #     }
-    # )
     return output
 
 
