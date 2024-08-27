@@ -12,7 +12,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function getApiUrl() {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:8000';
+  } else {
     return 'http://158.247.203.184:8000';
+  }
 }
 
 // Storing the object
