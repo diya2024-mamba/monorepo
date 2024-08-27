@@ -25,10 +25,10 @@ def test_as_retriever(
     assert retriever is not None
 
 
-def test_search_metadata_faiss(
+def test_invoke(
     vectorstore: MetadataVectorStore,
 ) -> None:
-    result = vectorstore.search_metadata_faiss("script_id", "1")
-    value = list(result.values())[0]
-    assert value.metadata.get("character") == "해리"
-    assert value.page_content == "루모스 막시마! 루모스 막시마!"
+    retriever = vectorstore.as_retriever()
+    output = retriever.invoke("안녕?", character="해리")
+    assert isinstance(output, list)
+    assert len(output) > 0

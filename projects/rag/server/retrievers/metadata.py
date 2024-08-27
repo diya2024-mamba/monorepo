@@ -1,6 +1,8 @@
 import logging
 import os
+from typing import Any, Optional
 
+from langchain.schema import BaseRetriever
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
@@ -8,6 +10,79 @@ from langchain_openai import OpenAIEmbeddings
 from .base import VectorStore
 
 logger = logging.getLogger(__name__)
+
+
+class MetadataRetriever(BaseRetriever):
+    vectorstore: FAISS
+    retriever: Optional[BaseRetriever]
+    script: dict[str, Any] = {}
+    front_script: int = 1
+    back_script: int = 3
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.retriever = self.vectorstore.as_retriever()
+        self.script = {
+            doc.metadata["script_id"]: {
+                "character": doc.metadata["character"],
+                "content": doc.page_content,
+            }
+            for doc in self.vectorstore.docstore._dict.values()
+        }
+
+    def _check_character(self, documents: list[Document], character: str) -> list:
+        doc_index = []
+        for idx, doc in enumerate(documents):
+            script_id = int(doc.metadata["script_id"])
+
+            # 대본 뒷부분 캐릭터 검색
+            for i in range(1, self.back_script + 1):
+                if len(self.script) < script_id + i:
+                    break
+                elif self.script[str(script_id + i)]["character"] == character:
+                    doc_index.append(idx)
+                    break
+        return [documents[i] for i in doc_index]
+
+    def _make_script(self, script_id: int) -> str:
+        new_script = ""
+        for i in range(self.front_script, 0, -1):
+            if script_id - i < 0:
+                continue
+            new_script += (
+                self.script[str(script_id - i)]["character"]
+                + " : "
+                + self.script[str(script_id - i)]["content"]
+                + "\n"
+            )
+
+        for i in range(self.back_script + 1):
+            if len(self.script) < script_id + i:
+                break
+            new_script += (
+                self.script[str(script_id + i)]["character"]
+                + " : "
+                + self.script[str(script_id + i)]["content"]
+                + "\n"
+            )
+
+        return new_script
+
+    def _get_relevant_documents(self, query: str, *, character: str) -> list[Document]:
+        documents = self.retriever.invoke(query)
+        new_documents = self._check_character(documents, character)
+        if new_documents:
+            documents = new_documents
+
+        output = []
+        for doc in documents:
+            script_id = int(doc.metadata["script_id"])
+            output.append(self._make_script(script_id))
+
+        return output
 
 
 class MetadataVectorStore(VectorStore):
@@ -58,9 +133,14 @@ class MetadataVectorStore(VectorStore):
 
         logging.info(f"Saved vectorstore to {self.path}")
 
-    def search_metadata_faiss(self, key: str, value: str) -> dict:
-        if self.db is None:
-            self.db = self.as_retriever()
+    def as_retriever(self) -> BaseRetriever:
+        if not os.path.exists(self.path):
+            self.preprocess()
+        assert os.path.exists(self.path), f"{self.path} does not exist"
 
-        docs = self.db.vectorstore.docstore._dict.items()
-        return dict(filter(lambda v: v[1].metadata[key] == value, docs))
+        vectorstore = FAISS.load_local(
+            folder_path=self.path,
+            embeddings=OpenAIEmbeddings(),
+            allow_dangerous_deserialization=True,
+        )
+        return MetadataRetriever(vectorstore=vectorstore)
