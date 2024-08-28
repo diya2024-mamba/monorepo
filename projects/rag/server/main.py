@@ -55,7 +55,7 @@ def chat(
                     "llm": llm,
                     "retriever": retriever,
                     "rag": rag,
-                    "user_character": "도비",
+                    "user_character": "마지",
                     "ai_character": user_character,
                     "prompt": user_question,
                 },

@@ -140,7 +140,7 @@ async def random_invoke(input: RandomInput) -> JSONResponse:
         retriever=config1[1],
         rag=config1[2],
         ai_character=input.character,
-        user_character="도비",  # TODO: change later
+        user_character="마지", 
         prompt=input.prompt,
     )
     input2 = InvokeInput(
@@ -148,7 +148,7 @@ async def random_invoke(input: RandomInput) -> JSONResponse:
         retriever=config2[1],
         rag=config2[2],
         ai_character=input.character,
-        user_character="도비",  # TODO: change later
+        user_character="마지",
         prompt=input.prompt,
     )
 
