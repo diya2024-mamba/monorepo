@@ -1,9 +1,13 @@
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type, Union
 
 import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
-from langchain_openai.chat_models.base import BaseChatOpenAI
+from langchain_core.language_models.base import LanguageModelInput
+from langchain_core.language_models.llms import LLM
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import Runnable
+from langchain_openai import ChatOpenAI
 from utils import load_env
 
 load_env()
@@ -11,9 +15,10 @@ load_env()
 API_KEY = os.getenv("RUNPOD_API_KEY")
 ENDPOINT = "3pnhsvccplyz39"
 
+ChatGPT = ChatOpenAI(model="gpt-4o-mini")
 
-class Solar(BaseChatOpenAI):
 
+class Solar(LLM):
     def _call(
         self,
         prompt: str,
@@ -69,3 +74,9 @@ class Solar(BaseChatOpenAI):
     def _llm_type(self) -> str:
         """Get the type of language model used by this chat model. Used for logging purposes only."""
         return "solar"
+
+    def with_structured_output(
+        self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Use ChatGPT with structured output."""
+        return ChatGPT.with_structured_output(schema, **kwargs)
