@@ -42,16 +42,19 @@ class BaseRAG:
             self.llm.temperature = temperature
 
         system_prompt = """
-            You are an excellent mimic. You are very skilled at speaking like a real character based on the given script.
+### System:
+Act as {ai_character} in movie 해리포터. Below is the scripts of {ai_character} from the movie you can refer to.
+---
+{document}
+---
+You are currently having conversation with {user_character}. Response should be maximum 2 sentences. 한국어로 대답하세요.
         """
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", system_prompt),
                 (
-                    "human",
-                    "<<<character>>> \n\n {ai_character} \n\n <<<script>>> \n\n {document} \n\n <<<characteristics>>> \n\n \
-                1. Respond to {user_character} based on the script. \n 2. Conduct the conversation in one turn each. \n 3. Speak like the character. \n 4. Speak Korean. \n\n\
-                <<<Conversation>>> {question}",
+                    "user",
+                    "### User ({user_character}): {question}",
                 ),
             ]
         )
@@ -64,6 +67,8 @@ class BaseRAG:
                 "question": user_question,
             }
         )
+        if generation.startswith("#") and ":" in generation :
+            generation = generation.split(":")[1]
         self.logger.debug("Generated response: %s", generation)
 
         state["generation"] = generation

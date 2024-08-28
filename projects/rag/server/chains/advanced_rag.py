@@ -118,17 +118,16 @@ class AdvancedRAG(BaseRAG):
 
         # Prompt
         system = """
-        You are a grader assessing relevance of a retrieved document to a user question. \n
-        If the document contains keyword(s) or semantic meaning related to the question, grade it as relevant. \n
-        Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.
-        """
+### System:
+You are a grader assessing relevance of a retrieved document to a user question. \n
+If the document contains keyword(s) or semantic meaning related to the question, grade it as relevant. \n
+Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question."""
         grade_prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", system),
                 (
                     "human",
-                    "<<<Character>>> {ai_character} \n\n \
-                        <<<Retrieved document>>> \n\n {document} \n\n <<<User question>>> {question}",
+                    "### Character: {ai_character} \n\n ### Retrieved Document: \n {document} \n\n ### User: {question}",
                 ),
             ]
         )
@@ -165,14 +164,14 @@ class AdvancedRAG(BaseRAG):
         ai_character = state["ai_character"]
 
         # Prompt
-        conver_system_prompt = """You are a movie buff. You can skillfully recite lines from famous movie characters."""
+        conver_system_prompt = """### System: \n You are a movie buff. You can skillfully recite lines from famous movie characters."""
         conver_prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", conver_system_prompt),
                 (
                     "human",
-                    "<<<movie>>> {movie} \n\n <<<character>>> \n\n {ai_character} \n\n \
-                    <<<script>>> Generate lines in Korean that {ai_character} would say to {user_character}.",
+                    "### Movie Title: \n {movie} \n\n ## Character Name: \n {ai_character} \n\n \
+                    ### Instruction: \n Generate lines that {ai_character} would say to {user_character}. Speak 한국어.",
                 ),
             ]
         )
@@ -194,14 +193,13 @@ class AdvancedRAG(BaseRAG):
         character_conversation = state["character_conversation"]
 
         # Prompt
-        re_write_system_prompt = """You are skilled at modifying questions. Based on the given lines, transform the original dialogue accordingly."""
+        re_write_system_prompt = """### System: \n You are skilled at modifying questions. Based on the given lines, transform the original dialogue accordingly."""
         re_write_prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", re_write_system_prompt),
                 (
                     "human",
-                    "<<<Script lines>>> \n\n {character_conver} \n\n \
-                    <<<Original dialogue>>> \n\n {question} \n Transform the original dialogue into an improved question form. Speak Korean.",
+                    "### Scripts \n {character_conver} \n\n ### Original Sentence \n {question} \n\n ### Instruction \n Transform the original dialogue into an improved question form. Speak 한국어.",
                 ),
             ]
         )
@@ -239,21 +237,20 @@ class AdvancedRAG(BaseRAG):
         # LLM with function call
         structured_llm = self.llm.with_structured_output(GradeAnswer)
 
-        review_system_prompt = """You are a skilled communicator who excels at understanding the context of conversations. Review the generated dialogue to ensure it aligns with the flow of the conversation or introduces creative elements."""
+        review_system_prompt = """### System: \n You are a skilled communicator who excels at understanding the context of conversations. Review the generated dialogue to ensure it aligns with the flow of the conversation or introduces creative elements."""
         review_prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", review_system_prompt),
                 (
                     "human",
-                    """Human: {question}
-                    AI: {generation}
+                    """
+### User: {question}
+### Assistant: {generation}
 
-                    <<<Problem>>>
-                    - Review the above conversation to check if the AI's response aligns with the flow or introduces creativity.
-                    - If the AI's response is appropriate or creative, generate "yes"; if not, generate "no."
-
-                    Response:
-                    """,
+### Instruction:
+- Review the above conversation to check if the Assitant's response aligns with the flow or introduces creativity.
+- If the Assistant's response is appropriate or creative, generate "yes"; if not, generate "no."
+""",
                 ),
             ]
         )
