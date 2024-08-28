@@ -1,4 +1,3 @@
-
 from chains.base import BaseRAG
 from chains.datamodels import GradeAnswer, GradeDocuments, GraphState
 from langchain.schema import BaseRetriever
