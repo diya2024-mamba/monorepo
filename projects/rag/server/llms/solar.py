@@ -1,12 +1,12 @@
 import os
-from typing import Any, Dict, List, Optional, Union, Type
+from typing import Any, Dict, List, Optional, Type, Union
 
-from langchain_core.runnables import Runnable
 import requests
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
-from langchain_core.language_models.llms import LLM
 from langchain_core.language_models.base import LanguageModelInput
+from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
 from utils import load_env
 
