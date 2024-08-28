@@ -39,7 +39,8 @@ function initializeChatPage() {
   const API_URL = getApiUrl(); // Use the new getApiUrl function
 
   // Initialize variables
-  let BOT_NAME, PERSON_NAME;
+  let BOT_NAME = "Harry";
+  let PERSON_NAME = "Harry";
   const USE_API = true; // Set this to true when API is ready
   const PERSON_IMG = "/client/static/images/user.png";
 
@@ -121,7 +122,8 @@ function initializeChatPage() {
         llm: "openai",
         retriever: "metadata",
         rag: "base",
-        character: BOT_NAME,
+        user_character: PERSON_NAME,
+        ai_character: BOT_NAME,
         prompt: userMessage
       })
     })

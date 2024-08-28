@@ -6,7 +6,7 @@ import random
 import secrets
 from enum import StrEnum
 
-from chains import base_graph, crag_graph, srag_graph
+from chains import AdvancedRAG
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -70,7 +70,8 @@ class InvokeInput(BaseModel):
     llm: LLM
     retriever: Retriever
     rag: RAG
-    character: str
+    user_character: str
+    ai_character: str
     prompt: str
 
 
@@ -94,28 +95,24 @@ async def invoke(input: InvokeInput) -> JSONResponse:
         case _:
             raise ValueError(f"Invalid Retriever: {input.retriever}")
 
-    match input.rag:
-        case RAG.BASE:
-            graph = base_graph(llm, retriever)
-        case RAG.CRAG:
-            graph = crag_graph(llm, retriever)
-        case RAG.SRAG:
-            graph = srag_graph(llm, retriever)
-        case _:
-            raise ValueError(f"Invalid RAG: {input.rag}")
+    if input.rag not in RAG.__members__.values():
+        raise ValueError(f"Invalid RAG: {input.rag}")
+
+    rag = AdvancedRAG(retriever, llm, input.rag)
+    graph = rag.get_graph()
 
     RECURSION_LIMIT = 2 * 3 + 1
 
     query = {
         "user_question": input.prompt,
-        "user_character": input.character,
+        "user_character": input.user_character,
+        "ai_character": input.ai_character,
     }
 
     try:
         output = graph.invoke(query, {"recursion_limit": RECURSION_LIMIT})
     except GraphRecursionError:
         output = "Agent stopped due to max iterations."
-
     return output
 
 
@@ -142,14 +139,16 @@ async def random_invoke(input: RandomInput) -> JSONResponse:
         llm=config1[0],
         retriever=config1[1],
         rag=config1[2],
-        character=input.character,
+        ai_character=input.character,
+        user_character="도비",  # TODO: change later
         prompt=input.prompt,
     )
     input2 = InvokeInput(
         llm=config2[0],
         retriever=config2[1],
         rag=config2[2],
-        character=input.character,
+        ai_character=input.character,
+        user_character="도비",  # TODO: change later
         prompt=input.prompt,
     )
 
@@ -205,4 +204,4 @@ async def vote(input: VoteInput) -> JSONResponse:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug")

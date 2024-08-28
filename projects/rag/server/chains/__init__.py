@@ -1,9 +1,7 @@
-from chains.base import get_graph as base_graph
-from chains.c_rag import get_graph as crag_graph
-from chains.self_rag import get_graph as srag_graph
+from chains.advanced_rag import AdvancedRAG
+from chains.base import BaseRAG
 
 __all__ = [
-    "base_graph",
-    "crag_graph",
-    "srag_graph",
+    "BaseRAG",
+    "AdvancedRAG",
 ]
