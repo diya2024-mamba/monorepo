@@ -12,7 +12,6 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 from langgraph.errors import GraphRecursionError
-from langgraph.prebuilt import create_react_agent
 from llms import ChatOpenAI, Solar
 from pydantic import BaseModel
 from retrievers import BM25VectorStore, MetadataVectorStore, TextChunkVectorStore
@@ -73,7 +72,7 @@ class InvokeInput(BaseModel):
     rag: RAG
     character: str
     prompt: str
-    
+
 
 @app.post("/invoke")
 async def invoke(input: InvokeInput) -> JSONResponse:
