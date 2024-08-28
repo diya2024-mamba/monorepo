@@ -38,9 +38,7 @@ class AdvancedRAG(BaseRAG):
         # Define the nodes
         workflow.add_node("retrieve", self.retrieve)  # retrieve
         workflow.add_node("grade_documents", self.grade_documents)  # grade documents
-        workflow.add_node(
-            "generate", partial(self.generate, temperature=0.7)
-        )  # generate
+        workflow.add_node("generate", self.generate)  # generate
         workflow.add_node(
             "find_conversation", self.search_conversation
         )  # search_conversation
@@ -55,7 +53,7 @@ class AdvancedRAG(BaseRAG):
             {
                 True: "grade_documents",
                 False: "generate",
-            }
+            },
         )
         workflow.add_conditional_edges(
             "grade_documents",
@@ -80,9 +78,7 @@ class AdvancedRAG(BaseRAG):
         # Define the nodes
         workflow.add_node("retrieve", self.retrieve)  # retrieve
         workflow.add_node("grade_documents", self.grade_documents)  # grade documents
-        workflow.add_node(
-            "generate", partial(self.generate, temperature=0.7)
-        )  # generatae
+        workflow.add_node("generate", self.generate)  # generatae
         workflow.add_node(
             "find_conversation", self.search_conversation
         )  # search_conversation
@@ -96,7 +92,7 @@ class AdvancedRAG(BaseRAG):
             {
                 True: "grade_documents",
                 False: "generate",
-            }
+            },
         )
         workflow.add_conditional_edges(
             "grade_documents",

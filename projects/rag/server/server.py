@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 from langgraph.errors import GraphRecursionError
-from llms import ChatOpenAI, Solar
+from llms import GPT4o, Solar
 from pydantic import BaseModel
 from retrievers import BM25VectorStore, MetadataVectorStore, TextChunkVectorStore
 
@@ -79,7 +79,7 @@ class InvokeInput(BaseModel):
 async def invoke(input: InvokeInput) -> JSONResponse:
     match input.llm:
         case LLM.OPENAI:
-            llm = ChatOpenAI()
+            llm = GPT4o
         case LLM.SOLAR:
             llm = Solar()
         case _:
