@@ -13,12 +13,18 @@ from utils import load_env
 load_env()
 
 API_KEY = os.getenv("RUNPOD_API_KEY")
-ENDPOINT = "3pnhsvccplyz39"
+ENDPOINT = "rxhpaiya7o54qe"
 
 ChatGPT = ChatOpenAI(model="gpt-4o-mini")
 
 
 class Solar(LLM):
+    __setattr__ = object.__setattr__
+
+    def __init__(self):
+        super().__init__()
+        self.temperature = 1
+
     def _call(
         self,
         prompt: str,
@@ -51,9 +57,7 @@ class Solar(LLM):
             json={
                 "input": {
                     "method_name": "generate",
-                    "input": {
-                        "prompt": prompt,
-                    },
+                    "input": {"prompt": prompt, "temperature": self.temperature},
                 },
             },
         )
