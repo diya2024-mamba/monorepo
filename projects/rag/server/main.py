@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import anyio
@@ -7,6 +8,8 @@ from rich import print
 from server import app
 from typing_extensions import Annotated
 from utils import download_file, list_files, load_env, upload_file
+
+logging.basicConfig(level=logging.DEBUG)
 
 load_env()
 cli = typer.Typer(no_args_is_help=True)
