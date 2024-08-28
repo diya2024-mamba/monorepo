@@ -67,7 +67,7 @@ You are currently having conversation with {user_character}. Response should be 
                 "question": user_question,
             }
         )
-        if generation.startswith("#") and ":" in generation :
+        if generation.startswith("#") and ":" in generation:
             generation = generation.split(":")[1]
         self.logger.debug("Generated response: %s", generation)
 
