@@ -101,8 +101,6 @@ async def invoke(input: InvokeInput) -> JSONResponse:
     rag = AdvancedRAG(retriever, llm, input.rag)
     graph = rag.get_graph()
 
-    RECURSION_LIMIT = 2 * 3 + 1
-
     query = {
         "user_question": input.prompt,
         "user_character": input.user_character,
@@ -110,7 +108,7 @@ async def invoke(input: InvokeInput) -> JSONResponse:
     }
 
     try:
-        output = graph.invoke(query, {"recursion_limit": RECURSION_LIMIT})
+        output = graph.invoke(query)
     except GraphRecursionError:
         output = "Agent stopped due to max iterations."
     return output

@@ -10,6 +10,7 @@ class GraphState(TypedDict):
     search_conversation: Optional[str]
     character_conversation: Optional[str]
     generation: str
+    num_retrievals: int
 
 
 class GradeDocuments(BaseModel):

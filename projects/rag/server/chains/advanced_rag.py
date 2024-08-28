@@ -9,6 +9,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from langgraph.graph import END, START, StateGraph
 
+MAX_RETRIEVALS = 3
+
 
 class AdvancedRAG(BaseRAG):
 
@@ -47,7 +49,14 @@ class AdvancedRAG(BaseRAG):
 
         # Define the edges
         workflow.add_edge(START, "retrieve")
-        workflow.add_edge("retrieve", "grade_documents")
+        workflow.add_conditional_edges(
+            "retrieve",
+            lambda state: state["num_retrievals"] < MAX_RETRIEVALS,
+            {
+                True: "grade_documents",
+                False: "generate",
+            }
+        )
         workflow.add_conditional_edges(
             "grade_documents",
             self.decide_to_generate,
@@ -81,7 +90,14 @@ class AdvancedRAG(BaseRAG):
 
         # Define the edges
         workflow.add_edge(START, "retrieve")
-        workflow.add_edge("retrieve", "grade_documents")
+        workflow.add_conditional_edges(
+            "retrieve",
+            lambda state: state["num_retrievals"] < MAX_RETRIEVALS,
+            {
+                True: "grade_documents",
+                False: "generate",
+            }
+        )
         workflow.add_conditional_edges(
             "grade_documents",
             self.decide_to_generate,
@@ -264,6 +280,9 @@ class AdvancedRAG(BaseRAG):
 
     def decide_to_end(self, state: GraphState):
         self.logger.debug("---ASSESS GENERATION---")
+        if state["num_retrievals"] >= MAX_RETRIEVALS:
+            return "end"
+
         check = state["answer_check"]
 
         if check == "Yes":

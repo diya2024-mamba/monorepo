@@ -20,6 +20,12 @@ class BaseRAG:
         user_question = state["user_question"]
         user_character = state["user_character"]
 
+        if state.get("num_retrievals") is None:
+            state["num_retrievals"] = 1
+        else:
+            state["num_retrievals"] += 1
+        self.logger.debug("Number of retrievals: %s", state["num_retrievals"])
+
         documents = self.retriever.invoke(user_question, character=user_character)
         self.logger.debug("Retrieved documents: %s", documents)
 
