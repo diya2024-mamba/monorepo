@@ -1,80 +1,92 @@
 import logging
-from functools import partial
 
+from chains.datamodels import GraphState
 from langchain.schema import BaseRetriever
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from langgraph.graph import END, START, StateGraph
-from typing_extensions import TypedDict
-
-logger = logging.getLogger(__name__)
 
 
-class GraphState(TypedDict):
-    user_question: str
-    user_character: str
-    documents: list[str]
-    generation: str
+class BaseRAG:
+    def __init__(self, retriever: BaseRetriever, llm: BaseLanguageModel):
+        self.retriever = retriever
+        self.llm = llm
+        self.logger = logging.getLogger(__name__)
 
+    def retrieve(self, state: GraphState):
+        self.logger.debug("---RETRIEVE---")
+        user_question = state["user_question"]
+        user_character = state["user_character"]
 
-def retrieve(state: GraphState, retriever: BaseRetriever) -> GraphState:
-    logging.debug("---RETRIEVE---")
-    user_question = state["user_question"]
-    user_character = state["user_character"]
+        if state.get("num_retrievals") is None:
+            state["num_retrievals"] = 1
+        else:
+            state["num_retrievals"] += 1
+        self.logger.debug("Number of retrievals: %s", state["num_retrievals"])
 
-    documents = retriever.invoke(user_question, character=user_character)
-    logging.debug("Retrieved documents: %s", documents)
+        documents = self.retriever.invoke(user_question, character=user_character)
+        self.logger.debug("Retrieved documents: %s", documents)
 
-    state["documents"] = documents
-    return state
+        state["documents"] = [doc.page_content for doc in documents]
+        return state
 
+    def generate(self, state: GraphState, temperature: float = None):
+        self.logger.debug("---GENERATE---")
+        user_character = state["user_character"]
+        ai_character = state["ai_character"]
+        user_question = state["user_question"]
+        documents = "\n".join(state["documents"])
 
-def generate(state: GraphState, llm: BaseLanguageModel) -> GraphState:
-    logger.debug("---GENERATE---")
-    user_character = state["user_character"]
-    user_question = state["user_question"]
-    documents = state["documents"]
+        if state.get("num_generations") is None:
+            state["num_generations"] = 1
+        else:
+            state["num_generations"] += 1
+        self.logger.debug("Number of generations: %s", state["num_generations"])
 
-    system_prompt = """
-        당신은 흉내를 잘 내는 배우야. 대사를 기반으로 실제 캐릭터처럼 말하는 데 굉장히 능숙해
-    """
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            (
-                "human",
-                "<<<캐릭터>>> \n\n {character} \n\n <<<스크립트>>> \n\n {document} \n\n <<<특징>>> \n\n \
-            1. 스크립트를 기반으로 응답하라. \n 2. 대화는 1턴씩 수행하라. \n 3. 캐릭터처럼 이야기하라 \n\n\
-            <<<대화>>> {question}",
-            ),
-        ]
-    )
-    chain = prompt | llm | StrOutputParser()
-    generation = chain.invoke(
-        {
-            "character": user_character,
+        if temperature is not None:
+            self.llm.temperature = temperature
+        system_prompt = "Please try to provide useful, helpful and actionable answers."
+        user_prompt = """Act as {ai_character} in movie 해리포터. Below is the scripts of {ai_character} from the movie you can refer to.
+{document}
+
+You are currently having conversation with {user_character}. Response should be maximum 2 sentences. 한국어로 대답하세요.
+
+User: {question}"""
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                ("user", user_prompt),
+            ]
+        )
+        chain_input = {
+            "user_character": user_character,
+            "ai_character": ai_character,
             "document": documents,
             "question": user_question,
         }
-    )
-    logging.debug("Generated response: %s", generation)
+        self.logger.debug(f"Input:{prompt.format_messages(**chain_input)}")
+        chain = prompt | self.llm | StrOutputParser()
+        generation = chain.invoke(chain_input)
+        if generation.startswith("#") and ":" in generation:
+            generation = generation.split(":")[1]
 
-    state["generation"] = generation
-    return state
+        self.logger.debug("Generated response: %s", generation)
 
+        state["generation"] = generation
+        return state
 
-def get_graph(llm: BaseLanguageModel, retriever: BaseRetriever) -> Runnable:
-    workflow = StateGraph(GraphState)
+    def get_graph(self) -> Runnable:
+        workflow = StateGraph(GraphState)
 
-    # Define the nodes
-    workflow.add_node("retrieve", partial(retrieve, retriever=retriever))
-    workflow.add_node("generate", partial(generate, llm=llm))
+        # Define the nodes
+        workflow.add_node("retrieve", self.retrieve)
+        workflow.add_node("generate", self.generate)
 
-    # Define the edges
-    workflow.add_edge(START, "retrieve")
-    workflow.add_edge("retrieve", "generate")
-    workflow.add_edge("generate", END)
+        # Define the edges
+        workflow.add_edge(START, "retrieve")
+        workflow.add_edge("retrieve", "generate")
+        workflow.add_edge("generate", END)
 
-    return workflow.compile()
+        return workflow.compile()
