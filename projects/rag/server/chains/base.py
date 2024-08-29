@@ -37,38 +37,34 @@ class BaseRAG:
         user_character = state["user_character"]
         ai_character = state["ai_character"]
         user_question = state["user_question"]
-        documents = state["documents"]
+        documents = "\n".join(state["documents"])
         if temperature is not None:
             self.llm.temperature = temperature
-
-        system_prompt = """
-### System:
-Act as {ai_character} in movie 해리포터. Below is the scripts of {ai_character} from the movie you can refer to.
----
+        system_prompt = "Please try to provide useful, helpful and actionable answers."
+        user_prompt = """Act as {ai_character} in movie 해리포터. Below is the scripts of {ai_character} from the movie you can refer to.
 {document}
----
+
 You are currently having conversation with {user_character}. Response should be maximum 2 sentences. 한국어로 대답하세요.
-        """
+
+User: {question}"""
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", system_prompt),
-                (
-                    "user",
-                    "### User ({user_character}): {question}",
-                ),
+                ("user", user_prompt),
             ]
         )
+        chain_input = {
+            "user_character": user_character,
+            "ai_character": ai_character,
+            "document": documents,
+            "question": user_question,
+        }
+        self.logger.debug(f"Input:{prompt.format_messages(**chain_input)}")
         chain = prompt | self.llm | StrOutputParser()
-        generation = chain.invoke(
-            {
-                "user_character": user_character,
-                "ai_character": ai_character,
-                "document": documents,
-                "question": user_question,
-            }
-        )
+        generation = chain.invoke(chain_input)
         if generation.startswith("#") and ":" in generation:
             generation = generation.split(":")[1]
+
         self.logger.debug("Generated response: %s", generation)
 
         state["generation"] = generation
