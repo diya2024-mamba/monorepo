@@ -25,6 +25,6 @@ def test_get_graph(llm: BaseLanguageModel, retriever: BaseRetriever, method: str
             "user_character": "론",
             "ai_character": "말포이",
         },
-        config={"recursion_limit": 30},
+        config={"recursion_limit": 100},
     )
     assert output["generation"] is not None
