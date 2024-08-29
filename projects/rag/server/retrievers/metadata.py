@@ -94,7 +94,7 @@ class MetadataVectorStore(VectorStore):
         assert os.path.exists(path), f"{path} does not exist"
 
         script = []
-        with open(path) as f:
+        with open(path, encoding='UTF-8') as f:
             lines = f.readlines()
         for line in lines:
             line = line.strip()
