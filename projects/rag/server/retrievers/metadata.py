@@ -47,7 +47,7 @@ class MetadataRetriever(BaseRetriever):
                     break
         return [documents[i] for i in doc_index]
 
-    def _make_script(self, script_id: int) -> str:
+    def _make_script(self, script_id: int) -> Document:
         new_script = ""
         for i in range(self.front_script, 0, -1):
             if script_id - i < 0:
@@ -69,7 +69,7 @@ class MetadataRetriever(BaseRetriever):
                 + "\n"
             )
 
-        return new_script
+        return Document(page_content=new_script)
 
     def _get_relevant_documents(self, query: str, *, character: str) -> list[Document]:
         documents = self.retriever.invoke(query)

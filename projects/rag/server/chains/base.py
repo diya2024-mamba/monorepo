@@ -29,7 +29,7 @@ class BaseRAG:
         documents = self.retriever.invoke(user_question, character=user_character)
         self.logger.debug("Retrieved documents: %s", documents)
 
-        state["documents"] = documents
+        state["documents"] = [doc.page_content for doc in documents]
         return state
 
     def generate(self, state: GraphState, temperature: float = None):
@@ -38,6 +38,7 @@ class BaseRAG:
         ai_character = state["ai_character"]
         user_question = state["user_question"]
         documents = "\n".join(state["documents"])
+
         if temperature is not None:
             self.llm.temperature = temperature
         system_prompt = "Please try to provide useful, helpful and actionable answers."
