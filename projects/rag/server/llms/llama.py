@@ -1,4 +1,6 @@
+import logging
 import os
+import time
 from typing import Any, Dict, List, Optional, Type, Union
 
 import requests
@@ -12,8 +14,12 @@ from utils import load_env
 
 load_env()
 
+logger = logging.getLogger(__name__)
+
 API_KEY = os.getenv("RUNPOD_API_KEY")
 ENDPOINT = "rxhpaiya7o54qe"
+MAX_RETRIES = 3
+BACKOFF_FACTOR = 0.5
 
 ChatGPT = ChatOpenAI(model="gpt-4o-mini")
 
@@ -51,21 +57,34 @@ class Llama(LLM):
         if stop is not None:
             raise ValueError("stop kwargs are not permitted.")
 
-        response = requests.post(
-            f"https://api.runpod.ai/v2/{ENDPOINT}/runsync",
-            headers={"Authorization": f"Bearer {API_KEY}"},
-            json={
-                "input": {
-                    "method_name": "generate",
-                    "input": {"prompt": prompt, "temperature": self.temperature},
-                },
-            },
-        )
-        data = response.json()
-        output = data.get("output", {}).get("response")
-        if output is None:
-            raise ValueError("Failed to generate output")
-        return output
+        retries = 0
+        while retries < MAX_RETRIES:
+            try:
+                response = requests.post(
+                    f"https://api.runpod.ai/v2/{ENDPOINT}/runsync",
+                    headers={"Authorization": f"Bearer {API_KEY}"},
+                    json={
+                        "input": {
+                            "method_name": "generate",
+                            "input": {
+                                "prompt": prompt,
+                                "temperature": self.temperature,
+                            },
+                        },
+                    },
+                )
+                data = response.json()
+                output = data.get("output", {}).get("response")
+                if output is None:
+                    raise ValueError("Failed to generate output. Retrying...")
+                return output
+
+            except Exception as e:
+                logger.error(f"Error calling Llama: {e}. Retrying...")
+                time.sleep(BACKOFF_FACTOR * (2**retries))
+                retries += 1
+
+        raise ValueError("Failed to generate output")
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
