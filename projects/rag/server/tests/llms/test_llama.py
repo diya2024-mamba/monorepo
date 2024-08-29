@@ -1,10 +1,10 @@
 from langchain_core.prompts import ChatPromptTemplate
-from llms import Solar
+from llms import Llama3_1
 from rich import print
 
 
 def test_call():
-    llm = Solar()
+    llm = Llama3_1
     prompt = ChatPromptTemplate.from_messages(
         [("system", "you are a bot"), ("human", "{input}")]
     )

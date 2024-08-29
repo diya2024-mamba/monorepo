@@ -18,7 +18,7 @@ ENDPOINT = "rxhpaiya7o54qe"
 ChatGPT = ChatOpenAI(model="gpt-4o-mini")
 
 
-class Solar(LLM):
+class Llama(LLM):
     __setattr__ = object.__setattr__
 
     def __init__(self):
@@ -71,13 +71,13 @@ class Solar(LLM):
     def _identifying_params(self) -> Dict[str, Any]:
         """Return a dictionary of identifying parameters."""
         return {
-            "model_name": "Solar",
+            "model_name": "Llama-3.1-8B",
         }
 
     @property
     def _llm_type(self) -> str:
         """Get the type of language model used by this chat model. Used for logging purposes only."""
-        return "solar"
+        return "llama"
 
     def with_structured_output(
         self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any

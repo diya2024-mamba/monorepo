@@ -1,12 +1,12 @@
 import pytest
-from chains.base import get_graph
+from chains.advanced_rag import AdvancedRAG
 from langchain.schema import BaseRetriever
 from langchain_core.language_models import BaseLanguageModel
-from llms import ChatOpenAI, Solar
+from llms import GPT4o, Llama3_1
 from retrievers import BM25VectorStore, MetadataVectorStore, TextChunkVectorStore
 
 
-@pytest.mark.parametrize("llm", [ChatOpenAI(), Solar()])
+@pytest.mark.parametrize("llm", [GPT4o, Llama3_1])
 @pytest.mark.parametrize(
     "retriever",
     [
@@ -15,12 +15,15 @@ from retrievers import BM25VectorStore, MetadataVectorStore, TextChunkVectorStor
         BM25VectorStore().as_retriever(),
     ],
 )
-def test_get_graph(llm: BaseLanguageModel, retriever: BaseRetriever):
-    graph = get_graph(llm, retriever)
+@pytest.mark.parametrize("method", ["base", "crag", "srag"])
+def test_get_graph(llm: BaseLanguageModel, retriever: BaseRetriever, method: str):
+    rag = AdvancedRAG(retriever, llm, method)
+    graph = rag.get_graph()
     output = graph.invoke(
         {
             "user_question": "넌 저기로가",
             "user_character": "론",
+            "ai_character": "말포이",
         }
     )
     assert output["generation"] is not None

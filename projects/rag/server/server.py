@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 from langgraph.errors import GraphRecursionError
-from llms import GPT4o, Solar
+from llms import GPT4o, Llama3_1
 from pydantic import BaseModel
 from retrievers import BM25VectorStore, MetadataVectorStore, TextChunkVectorStore
 
@@ -51,7 +51,7 @@ def read_ab_test(password: str = Depends(authenticate)):
 
 class LLM(StrEnum):
     OPENAI = "openai"
-    SOLAR = "solar"
+    LLAMA = "llama"
 
 
 class Retriever(StrEnum):
@@ -80,8 +80,8 @@ async def invoke(input: InvokeInput) -> JSONResponse:
     match input.llm:
         case LLM.OPENAI:
             llm = GPT4o
-        case LLM.SOLAR:
-            llm = Solar()
+        case LLM.LLAMA:
+            llm = Llama3_1
         case _:
             raise ValueError(f"Invalid LLM: {input.llm}")
 

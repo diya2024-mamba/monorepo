@@ -10,8 +10,9 @@ from server import InvokeInput, RandomInput, VoteConfig, VoteInput, app
             llm="openai",
             retriever="textchunk",
             rag="base",
-            character="해리",
-            prompt="Hello",
+            user_character="마지",
+            ai_character="해리",
+            prompt="안녕 해리",
         )
     ],
 )
@@ -29,7 +30,7 @@ async def test_invoke(input: InvokeInput) -> None:
     [
         RandomInput(
             character="해리",
-            prompt="Hello",
+            prompt="안녕",
         )
     ],
 )
