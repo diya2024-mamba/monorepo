@@ -108,7 +108,7 @@ async def invoke(input: InvokeInput) -> JSONResponse:
     }
 
     try:
-        output = graph.invoke(query)
+        output = graph.invoke(query, config={"recursion_limit": 30})
     except GraphRecursionError:
         output = "Agent stopped due to max iterations."
     return output
