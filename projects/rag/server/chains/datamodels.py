@@ -11,6 +11,7 @@ class GraphState(TypedDict):
     character_conversation: Optional[str]
     generation: str
     num_retrievals: int
+    num_generations: int
 
 
 class GradeDocuments(BaseModel):

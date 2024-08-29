@@ -39,6 +39,12 @@ class BaseRAG:
         user_question = state["user_question"]
         documents = "\n".join(state["documents"])
 
+        if state.get("num_generations") is None:
+            state["num_generations"] = 1
+        else:
+            state["num_generations"] += 1
+        self.logger.debug("Number of generations: %s", state["num_generations"])
+
         if temperature is not None:
             self.llm.temperature = temperature
         system_prompt = "Please try to provide useful, helpful and actionable answers."

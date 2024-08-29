@@ -1,3 +1,6 @@
+import random
+import time
+
 from chains.base import BaseRAG
 from chains.datamodels import GradeAnswer, GradeDocuments, GraphState
 from langchain.schema import BaseRetriever
@@ -8,6 +11,13 @@ from langchain_core.runnables import Runnable
 from langgraph.graph import END, START, StateGraph
 
 MAX_RETRIEVALS = 3
+MAX_GENERATIONS = 3
+MIN_SLEEP = 0.5
+MAX_SLEEP = 1.5
+
+
+def random_sleep():
+    time.sleep(random.uniform(MIN_SLEEP, MAX_SLEEP))
 
 
 class AdvancedRAG(BaseRAG):
@@ -108,6 +118,7 @@ class AdvancedRAG(BaseRAG):
 
     def grade_documents(self, state: GraphState):
         self.logger.debug("---CHECK DOCUMENT RELEVANCE TO QUESTION---")
+        random_sleep()
 
         ai_character = state["ai_character"]
         user_question = state["user_question"]
@@ -158,6 +169,8 @@ Give a binary score 'yes' or 'no' score to indicate whether the document is rele
 
     def search_conversation(self, state: GraphState):
         self.logger.debug("---SEARCH CONVERSATIONS---")
+        random_sleep()
+
         # movie = state['movie']        # 해리포터로 고정
         movie = "해리포터"
         user_character = state["user_character"]
@@ -189,6 +202,8 @@ Give a binary score 'yes' or 'no' score to indicate whether the document is rele
 
     def transform_query(self, state: GraphState):
         self.logger.debug("---TRANSFORM QUERY---")
+        random_sleep()
+
         user_question = state["user_question"]
         character_conversation = state["character_conversation"]
 
@@ -231,6 +246,8 @@ Give a binary score 'yes' or 'no' score to indicate whether the document is rele
 
     def verification(self, state: GraphState):
         self.logger.debug("---Answer Check---")
+        random_sleep()
+
         user_question = state["user_question"]
         generation = state["generation"]
 
@@ -271,7 +288,10 @@ Give a binary score 'yes' or 'no' score to indicate whether the document is rele
 
     def decide_to_end(self, state: GraphState):
         self.logger.debug("---ASSESS GENERATION---")
-        if state["num_retrievals"] >= MAX_RETRIEVALS:
+        if (
+            state["num_retrievals"] >= MAX_RETRIEVALS
+            or state["num_generations"] >= MAX_GENERATIONS
+        ):
             return "end"
 
         check = state["answer_check"]
