@@ -40,7 +40,7 @@ class BaseRAG:
         documents = "\n".join(state["documents"])
         if temperature is not None:
             self.llm.temperature = temperature
-        system_prompt = "You are a helpful assistant."
+        system_prompt = "Please try to provide useful, helpful and actionable answers."
         user_prompt = """Act as {ai_character} in movie 해리포터. Below is the scripts of {ai_character} from the movie you can refer to.
 {document}
 
