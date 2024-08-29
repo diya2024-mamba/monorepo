@@ -133,24 +133,24 @@ Give a binary score 'yes' or 'no' score to indicate whether the document is rele
         )
         retrieval_grader = grade_prompt | structured_llm_grader
 
-        filtered_docs = []
-        conversation = "Yes"
-        for d in documents:
-            score = retrieval_grader.invoke(
+        scores = retrieval_grader.batch(
+            [
                 {
                     "ai_character": ai_character,
                     "question": user_question,
                     "document": d,
                 }
-            )
-            grade = score.binary_score
-            if grade == "yes":
-                self.logger.debug("---GRADE: DOCUMENT RELEVANT---")
-                filtered_docs.append(d)
-                conversation = "No"
-            else:
-                self.logger.debug("---GRADE: DOCUMENT NOT RELEVANT---")
-                continue
+                for d in documents
+            ]
+        )
+        grades = [score.binary_score for score in scores]
+        filtered_docs = [d for d, grade in zip(documents, grades) if grade == "yes"]
+        if len(filtered_docs) == 0:
+            self.logger.debug("---GRADE: DOCUMENT NOT RELEVANT---")
+            conversation = "Yes"
+        else:
+            self.logger.debug("---GRADE: DOCUMENT RELEVANT---")
+            conversation = "No"
 
         state["documents"] = filtered_docs
         state["search_conversation"] = conversation
