@@ -1,0 +1,6 @@
+dataset_name: computer_security
+description: The following are multiple choice questions (with answers) about computer
+  security.
+tag: mmlu_custom_stem
+include: _mmlu_custom_template_yaml
+task: mmlu_custom_computer_security

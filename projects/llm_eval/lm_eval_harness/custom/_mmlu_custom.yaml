@@ -1,0 +1,14 @@
+group: mmlu_custom
+group_alias: mmlu (custom)
+task:
+  - group: stem
+    task:
+      - mmlu_custom_stem
+    aggregate_metric_list:
+      - metric: acc
+        weight_by_size: False        
+aggregate_metric_list:
+  - metric: acc
+    weight_by_size: False
+metadata:
+  version: 2
