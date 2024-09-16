@@ -6,7 +6,7 @@ task:
       - mmlu_custom_stem
     aggregate_metric_list:
       - metric: acc
-        weight_by_size: False        
+        weight_by_size: False
 aggregate_metric_list:
   - metric: acc
     weight_by_size: False

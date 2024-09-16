@@ -1,4 +1,4 @@
-MCQA (Multiple Choice Question Answering) 벤치마크를 평가하는데 특화된 평가툴 lm-eval-hanress입니다.  
+MCQA (Multiple Choice Question Answering) 벤치마크를 평가하는데 특화된 평가툴 lm-eval-hanress입니다.
 주어진 모델, 태스크, 데이터셋이 아닌 **커스텀 세팅**에서 평가하는 방법에 대해 간단히 안내합니다.
 
 ## 1. lm-eval-hanress 설치
@@ -10,7 +10,7 @@ cd lm-evaluation-harness
 pip install -e .
 ```
 
-설치되는 라이브러리 및 패키지는 [여기](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/pyproject.toml)에서 확인 가능합니다.  
+설치되는 라이브러리 및 패키지는 [여기](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/pyproject.toml)에서 확인 가능합니다.
 (`lm-evaluation-harness/pyproject.toml` 파일의 링크입니다.)
 
 대부분의 사람들이 사용하는 `transformers` 를 그대로 사용할 수 있으며, 이러한 로컬 모델의 경우 빠른 추론을 위해 `vLLM`이 이용됩니다.
@@ -27,15 +27,15 @@ lm_eval --model hf \
 ```
 마찬가지로 [링크](https://github.com/EleutherAI/lm-evaluation-harness/tree/main)에 나와있는 내용입니다.
 
-특징은 `lm_eval`에 인자를 전달하는 방식이라는 점이고, 이는 `lm-evaluation-hanress`의 root 폴더에서 실행해야 정상적으로 동작합니다.  
-만약 해당 경로가 제대로 인식되지 않는 경우 환경 변수에 등록해줘야 합니다.  
+특징은 `lm_eval`에 인자를 전달하는 방식이라는 점이고, 이는 `lm-evaluation-hanress`의 root 폴더에서 실행해야 정상적으로 동작합니다.
+만약 해당 경로가 제대로 인식되지 않는 경우 환경 변수에 등록해줘야 합니다.
 `export PYTHONPATH=$PYTHONPATH:/example/lm-evaluation-harness`
 
-제대로 등록되었는지 확인하는 방법으로는 `lm-eval --task list` 명령어를 사용하는 것이 있습니다.  
+제대로 등록되었는지 확인하는 방법으로는 `lm-eval --task list` 명령어를 사용하는 것이 있습니다.
 만약 이를 실행했을 때 터미널에 텅빈 리스트가 출력된다면 경로가 제대로 등록되지 않은 것입니다.
 
 ## 3. 인자 알아보기
-[인터페이스 관련 문서](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/docs/interface.md)를 보시면 CLI 환경에서 쓸 수 있는 인자에 대해 자세히 설명하고 있습니다.  
+[인터페이스 관련 문서](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/docs/interface.md)를 보시면 CLI 환경에서 쓸 수 있는 인자에 대해 자세히 설명하고 있습니다.
 대표적인 것 몇 개만 설명하면 이렇습니다.
 
 - `--model`: 허깅페이스의 모델을 쓸 것이라면 `hf`를 입력하면 됩니다. 이외에 `openai-completions`, `anthropic` 등 다양한 api를 사용할수도 있습니다. 전체 목록은 [여기](https://github.com/EleutherAI/lm-evaluation-harness/tree/main#model-apis-and-inference-servers)에서 볼 수 있습니다.
@@ -48,11 +48,11 @@ lm_eval --model hf \
 
 
 ## 4. 커스텀 데이터셋
-벤치마크가 여러 개 세팅되어 있긴 하지만 상황에 따라 다르게 테스트 할 수 있습니다.  
-예를 들어 few-shot을 바꿔줄 수도 있고, few-shot의 개수 자체를 조정할 수도 있겠죠.  
+벤치마크가 여러 개 세팅되어 있긴 하지만 상황에 따라 다르게 테스트 할 수 있습니다.
+예를 들어 few-shot을 바꿔줄 수도 있고, few-shot의 개수 자체를 조정할 수도 있겠죠.
 또는 벤치마크에 포함된 모든 데이터셋에 대한 추론이 불필요할 수도 있습니다.
 
-물론 추론 속도가 빠른 편이라 그냥 추론 결과 중 선별하는 게 맘이 편할 수도 있습니다만 이를 컨트롤하는 방법을 알아두는 게 맘이 편하겠더라고요.  
+물론 추론 속도가 빠른 편이라 그냥 추론 결과 중 선별하는 게 맘이 편할 수도 있습니다만 이를 컨트롤하는 방법을 알아두는 게 맘이 편하겠더라고요.
 그래서 여기서는 `MMLU` 벤치마크의 일부 태스크만 선정해서 돌릴 수 있도록 세팅하는 방법에 대해 간략히 소개드리겠습니다.
 
 - `lm_eval/tasks/mmlu/` 경로에 `custom` 폴더를 추가해줍니다.
@@ -64,11 +64,11 @@ lm_eval --model hf \
 - 예시에 해당하는 'custom 폴더'를 참고해보시면 도움이 될 것입니다.
 
 ## 5. 커스텀 함수
-위에서 사용한 예시인 custom 폴더에서 작업을 한다고 하면, 해당 폴더 내에 `utils.py` 파일을 만들 수 있습니다.  
+위에서 사용한 예시인 custom 폴더에서 작업을 한다고 하면, 해당 폴더 내에 `utils.py` 파일을 만들 수 있습니다.
 여기에서 doc_to_text, doc_to_choice, doc_to_target에 들어갈 함수를 덮어 씌울 수 있습니다.
 
 이 함수들은 `jinja2`로 직접 작성할수도 있고, 방금 말씀드린 것처럼 `utils.py`에 작성 후 `!function utils.shuffle_and_format_choices`와 같이 불러올수도 있습니다.
-[jinja 관련 설명](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/docs/new_task_guide.md#writing-a-prompt-with-jinja-2) 또는 [python function 관련 설명](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/docs/new_task_guide.md#using-python-functions-for-prompts)을 참고해보세요! 
+[jinja 관련 설명](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/docs/new_task_guide.md#writing-a-prompt-with-jinja-2) 또는 [python function 관련 설명](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/docs/new_task_guide.md#using-python-functions-for-prompts)을 참고해보세요!
 
 저의 경우에는 최종적으로 `_mmlu_custom_template_yaml` 파일에
 
