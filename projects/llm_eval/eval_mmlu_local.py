@@ -207,27 +207,6 @@ def eval_cot(args, subject, val_df, test_df, output_path, save_middle):
     return accu, corr, wrong
 
 
-full_test_df, full_val_df = load_mmlu()
-all_subjects = []
-for each in full_test_df:
-    if each["subject"] not in all_subjects:
-        all_subjects.append(each["subject"])
-# if args.selected_subjects == "all":
-selected_subjects = "all"
-if selected_subjects == "all":
-    selected_subjects = all_subjects
-else:
-    selected_subjects = []
-    args_selected = selected_subjects.split(",")
-    for sub in all_subjects:
-        for each in args_selected:
-            if each.replace(" ", "_") in sub.replace(" ", "_"):
-                selected_subjects.append(sub)
-
-sta_dict = {}
-selected_subjects = sorted(selected_subjects)
-
-
 def main():
     # model, tokenizer = load_model()
     if not os.path.exists(save_result_dir):
