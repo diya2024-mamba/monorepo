@@ -6,7 +6,7 @@ import os
 import random
 import re
 import sys
-import time 
+import time
 
 import ollama
 import torch
@@ -14,7 +14,6 @@ from datasets import load_dataset
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset as TorchDataset
 from tqdm import tqdm
-
 
 choices = ["A", "B", "C", "D"]
 max_model_length = 4096
@@ -31,7 +30,7 @@ class CustomDataset(TorchDataset):
     def __getitem__(self, idx):
         item = self.dataset[idx]
         return item
-    
+
 
 def load_mmlu():
     dataset = load_dataset("cais/mmlu", "all")
@@ -208,7 +207,6 @@ def eval_cot(args, subject, val_df, test_df, output_path, save_middle):
     return accu, corr, wrong
 
 
-
 full_test_df, full_val_df = load_mmlu()
 all_subjects = []
 for each in full_test_df:
@@ -228,6 +226,7 @@ else:
 
 sta_dict = {}
 selected_subjects = sorted(selected_subjects)
+
 
 def main():
     # model, tokenizer = load_model()
@@ -251,7 +250,7 @@ def main():
 
     logging.info("selected subjects:\n" + "\n".join(selected_subjects))
     print("selected subjects:\n" + "\n".join(selected_subjects))
-    
+
     sta_dict = {}
     selected_subjects = sorted(selected_subjects)
 
@@ -299,6 +298,7 @@ def main():
         record = args_generate_path(args) + [time_str, weighted_acc]
         writer.writerow(record)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # few shot num
@@ -329,7 +329,7 @@ if __name__ == "__main__":
     os.makedirs(save_result_dir, exist_ok=True)
 
     save_log_dir = os.path.join(args.save_dir, "log")
-    
+
     os.makedirs(save_log_dir, exist_ok=True)
     logging.basicConfig(
         level=logging.DEBUG,
