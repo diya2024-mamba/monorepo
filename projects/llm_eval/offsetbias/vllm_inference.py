@@ -1,9 +1,10 @@
 import logging
-from typing import List, Union, Optional
+from typing import List, Optional, Union
+
 from torch import nn
 from transformers.modeling_utils import ModuleUtilsMixin
-from vllm import LLM, SamplingParams, ModelRegistry
-from vllm import ModelRegistry
+from vllm import LLM, SamplingParams
+
 
 def default(val, d):
     if val is not None:
@@ -25,11 +26,10 @@ class CausalLMWithvLLM(nn.Module, ModuleUtilsMixin):
         verbose: bool = False,
         model_kwargs: Optional[dict] = None,
         generation_config: Optional[dict] = None,
-        
     ):
         super().__init__()
         self.model = None
-        self.tokenizer = None  
+        self.tokenizer = None
         self.processor = None
         self.verbose = verbose
         self.use_chat_template = use_chat_template
@@ -44,7 +44,13 @@ class CausalLMWithvLLM(nn.Module, ModuleUtilsMixin):
             logging.basicConfig(level=logging.DEBUG)
 
     def post_init(self):
-        stop_tokens = ["Instruction:", "Instruction", "Response:", "Response", "<|eot_id|>"]
+        stop_tokens = [
+            "Instruction:",
+            "Instruction",
+            "Response:",
+            "Response",
+            "<|eot_id|>",
+        ]
         self.generation_config = SamplingParams(
             **self.generation_config, stop=stop_tokens
         )
@@ -55,11 +61,16 @@ class CausalLMWithvLLM(nn.Module, ModuleUtilsMixin):
 
         if self.use_chat_template:
             if not self.tokenizer:
-                raise ValueError("Tokenizer must be initialized when use_chat_template is True.")
+                raise ValueError(
+                    "Tokenizer must be initialized when use_chat_template is True."
+                )
             text = [
                 self.tokenizer.apply_chat_template(
-                    [{'role': 'user', 'content': t}], tokenize=False, add_generation_prompt=True
-                ) for t in text
+                    [{"role": "user", "content": t}],
+                    tokenize=False,
+                    add_generation_prompt=True,
+                )
+                for t in text
             ]
 
         outputs = self.model.generate(

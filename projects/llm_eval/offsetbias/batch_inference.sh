@@ -12,4 +12,3 @@ do
         --output_file $output_dir \
         --reverse $reverse
 done
-
