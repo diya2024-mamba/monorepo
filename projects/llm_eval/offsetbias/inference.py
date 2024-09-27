@@ -9,7 +9,7 @@ from vllm_inference import CausalLMWithvLLM
 
 def main(args):
     prompt_config = OmegaConf.load(args.prompt_path)
-    prompt_template = prompt_config['base_prompt']
+    prompt_template = prompt_config["base_prompt"]
     tokenizer = AutoTokenizer.from_pretrained(args.model_path)
     ds = CustomDatasetForDev(args, tokenizer, prompt_template)
     llm = CausalLMWithvLLM(
@@ -46,7 +46,11 @@ if __name__ == "__main__":
         "--model_path", type=str, required=True, help="Path to the pre-trained model."
     )
     parser.add_argument(
-        "--prompt_path", type=str, required=True, default="/projects/llm_eval/offsetbias/prompt.yaml", help="Set prompt yaml file path",
+        "--prompt_path",
+        type=str,
+        required=True,
+        default="/projects/llm_eval/offsetbias/prompt.yaml",
+        help="Set prompt yaml file path",
     )
     parser.add_argument(
         "--input_file", type=str, required=True, help="Path to the input JSON file."
@@ -55,7 +59,11 @@ if __name__ == "__main__":
         "--output_file", type=str, required=True, help="Path to the output JSON file."
     )
     parser.add_argument(
-        "--reverse", type=bool, required=False, default=False, help="Set Swap arg for testing",
+        "--reverse",
+        type=bool,
+        required=False,
+        default=False,
+        help="Set Swap arg for testing",
     )
     args = parser.parse_args()
 
