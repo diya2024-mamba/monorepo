@@ -120,8 +120,8 @@ function initializeChatPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         llm: "openai",
-        retriever: "metadata",
-        rag: "base",
+        retriever: "story",
+        rag: "prag",
         user_character: PERSON_NAME,
         ai_character: BOT_NAME,
         prompt: userMessage

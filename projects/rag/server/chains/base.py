@@ -51,7 +51,7 @@ class BaseRAG:
         user_prompt = """Act as {ai_character} in movie 해리포터. Below is the scripts of {ai_character} from the movie you can refer to.
 {document}
 
-You are currently having conversation with {user_character}. Response should be maximum 2 sentences. 한국어로 대답하세요.
+You are currently having conversation with {user_character}. Response should be maximum 3 sentences. 친구처럼 반말로 친근하게 한국어로 대답하세요.
 
 User: {question}"""
         prompt = ChatPromptTemplate.from_messages(
