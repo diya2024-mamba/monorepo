@@ -20,7 +20,7 @@ class RelationshipSearch:
         self.relationship_list = list(self.relationship.keys())
     
     def relationship_map(self):
-        path = "data/character_relationship.json"
+        path = "open_data/character_relationship.json"
         print(os.path.realpath(__file__))
         assert os.path.exists(path), f"{path} does not exist"
 
@@ -36,7 +36,7 @@ class RelationshipSearch:
 
 
 class StoryVectorStore(VectorStore):
-    path = "db/harry_story_db"
+    path = "open_data/harry_story_db"
     db: FAISS = None
 
     def preprocess(self) -> None:
