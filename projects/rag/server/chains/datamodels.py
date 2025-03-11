@@ -34,14 +34,13 @@ class GradeAnswer(BaseModel):
 
 class CharacterName(BaseModel):
     """List of Character name for relationship check on retrieved documents"""
-    charcater_name: str = Field(
-        ...,
-        description= "이름을 반환"
-    )
+
+    charcater_name: str = Field(..., description="이름을 반환")
 
 
 class QueryIntent(BaseModel):
-    """Intent to determine the type of query """
+    """Intent to determine the type of query"""
+
     intent: str = Field(
         description="Check the intent of the question 'relationship', 'story', 'small_talk'"
     )

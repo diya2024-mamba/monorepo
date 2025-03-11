@@ -124,13 +124,18 @@ class AdvancedRAG(BaseRAG):
         workflow.add_edge("generate", END)
 
         return workflow.compile()
+
     def _get_prompt_rag_graph(self) -> Runnable:
         workflow = StateGraph(GraphState)
         # Define the nodes
-        workflow.add_node("discriminate_query_intent", self.discriminate_query_intent)  # discriminate query intent
-        workflow.add_node("search_relationship", self.search_relationship) # search relationship
-        workflow.add_node("small_talk", self.small_talk) # small talk
-        workflow.add_node("retrieve", self.retrieve) # retrieve
+        workflow.add_node(
+            "discriminate_query_intent", self.discriminate_query_intent
+        )  # discriminate query intent
+        workflow.add_node(
+            "search_relationship", self.search_relationship
+        )  # search relationship
+        workflow.add_node("small_talk", self.small_talk)  # small talk
+        workflow.add_node("retrieve", self.retrieve)  # retrieve
         workflow.add_node("generate", self.generate)  # generatae
 
         # Define the edges
@@ -141,7 +146,7 @@ class AdvancedRAG(BaseRAG):
             {
                 "search_relationship": "search_relationship",
                 "search_story": "retrieve",
-                "small_talk": "small_talk"
+                "small_talk": "small_talk",
             },
         )
         workflow.add_edge("search_relationship", "generate")
@@ -163,7 +168,7 @@ class AdvancedRAG(BaseRAG):
         # LLM with function call
         structred_llm_name_list = self.llm.with_structured_output(CharacterName)
 
-        #Prompt
+        # Prompt
         rel_system_prompt = """
 당신은 판별자입니다.
 name_list = {name_list} 주어진 이름 리스트를 읽어라.
@@ -193,32 +198,27 @@ user는 {ai_character} 캐릭터와 대화하고 있다.
 """
 
         rel_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", rel_system_prompt),
-                ("human", user_question)
-            ]
+            [("system", rel_system_prompt), ("human", user_question)]
         )
 
         name_generation = rel_prompt | structred_llm_name_list
         char_list = name_generation.invoke(
-            {
-                "ai_character": ai_character,
-                "name_list": name_list
-            }
+            {"ai_character": ai_character, "name_list": name_list}
         )
 
         name = char_list.charcater_name
         relationship_doc = []
 
         if name != "없음":
-            doc = name + ": " + character_relationship.search_relationship_document(name)
+            doc = (
+                name + ": " + character_relationship.search_relationship_document(name)
+            )
             relationship_doc.append(doc)
         else:
             relationship_doc = "I don't know."
 
-        state['documents'] = relationship_doc
+        state["documents"] = relationship_doc
         return state
-
 
     def decide_query_intent(self, state: GraphState):
         self.logger.debug("---DECIDE TO INTENT---")
@@ -232,7 +232,7 @@ user는 {ai_character} 캐릭터와 대화하고 있다.
             return "small_talk"
 
     def small_talk(self, state: GraphState):
-        state['documents'] = ["No Document"]
+        state["documents"] = ["No Document"]
         return state
 
     def discriminate_query_intent(self, state: GraphState):
@@ -240,7 +240,7 @@ user는 {ai_character} 캐릭터와 대화하고 있다.
         ai_character = state["ai_character"]
         user_question = state["user_question"]
         # Prompt
-        disc_system_prompt="""
+        disc_system_prompt = """
 ### System:
 You are the discriminator who listens to the user's questions and understands the intent of the sentence. \n
 There are three categories in total. \n
@@ -250,23 +250,21 @@ There are three categories in total. \n
 Choose one of 'relationship' or 'story' or 'small_talk' that matches the intent of the question.
 """
         disc_prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", disc_system_prompt),
-                    (
-                        "human",
-                        "### Character: {ai_character} \n\n ### User: {question}",
-                    ),]
+            [
+                ("system", disc_system_prompt),
+                (
+                    "human",
+                    "### Character: {ai_character} \n\n ### User: {question}",
+                ),
+            ]
         )
         # LLM with function call
         structured_llm = self.llm.with_structured_output(QueryIntent)
         disc_generation = disc_prompt | structured_llm
         intent_disc = disc_generation.invoke(
-            {
-                "ai_character": ai_character,
-                "question": user_question
-            }
+            {"ai_character": ai_character, "question": user_question}
         )
-        state['query_intent'] = intent_disc.intent
+        state["query_intent"] = intent_disc.intent
         return state
 
     def grade_documents(self, state: GraphState):
