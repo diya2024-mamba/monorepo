@@ -1,12 +1,8 @@
+import json
 import logging
 import os
-import json
-from typing import Any, Optional
 
-from langchain.schema import BaseRetriever
 from langchain_community.vectorstores import FAISS
-from langchain_core.documents import Document
-from langchain_openai import OpenAIEmbeddings
 
 from .base import VectorStore
 
@@ -18,7 +14,7 @@ class RelationshipSearch:
         self.character = character
         self.relationship = self.relationship_map()
         self.relationship_list = list(self.relationship.keys())
-    
+
     def relationship_map(self):
         path = "open_data/character_relationship.json"
         print(os.path.realpath(__file__))
@@ -27,7 +23,7 @@ class RelationshipSearch:
         with open(path, "r", encoding="utf-8") as f:
             relationship = json.load(f)
         return relationship[self.character]
-    
+
     def search_relationship_document(self, name):
         if name in self.relationship:
             return self.relationship[name]

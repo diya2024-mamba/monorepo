@@ -1,15 +1,21 @@
 import random
 import time
 
-from retrievers.prompt_search import RelationshipSearch
 from chains.base import BaseRAG
-from chains.datamodels import GradeAnswer, GradeDocuments, GraphState, CharacterName, QueryIntent
+from chains.datamodels import (
+    CharacterName,
+    GradeAnswer,
+    GradeDocuments,
+    GraphState,
+    QueryIntent,
+)
 from langchain.schema import BaseRetriever
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from langgraph.graph import END, START, StateGraph
+from retrievers.prompt_search import RelationshipSearch
 
 MAX_RETRIEVALS = 3
 MAX_GENERATIONS = 3
@@ -150,7 +156,7 @@ class AdvancedRAG(BaseRAG):
 
         ai_character = state["ai_character"]
         user_question = state["user_question"]
-        
+
         character_relationship = RelationshipSearch(ai_character)
         name_list = character_relationship.relationship_list
 
@@ -192,7 +198,7 @@ user는 {ai_character} 캐릭터와 대화하고 있다.
                 ("human", user_question)
             ]
         )
-        
+
         name_generation = rel_prompt | structred_llm_name_list
         char_list = name_generation.invoke(
             {
@@ -212,7 +218,7 @@ user는 {ai_character} 캐릭터와 대화하고 있다.
 
         state['documents'] = relationship_doc
         return state
-        
+
 
     def decide_query_intent(self, state: GraphState):
         self.logger.debug("---DECIDE TO INTENT---")
@@ -224,7 +230,7 @@ user는 {ai_character} 캐릭터와 대화하고 있다.
             return "search_story"
         else:
             return "small_talk"
-    
+
     def small_talk(self, state: GraphState):
         state['documents'] = ["No Document"]
         return state
