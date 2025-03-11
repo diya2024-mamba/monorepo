@@ -14,7 +14,12 @@ from fastapi.staticfiles import StaticFiles
 from langgraph.errors import GraphRecursionError
 from llms import GPT4o, Llama3_1
 from pydantic import BaseModel
-from retrievers import BM25VectorStore, MetadataVectorStore, TextChunkVectorStore
+from retrievers import (
+    BM25VectorStore,
+    MetadataVectorStore,
+    StoryVectorStore,
+    TextChunkVectorStore,
+)
 
 app = FastAPI(title="LangChain Server for RAG")
 
@@ -58,12 +63,14 @@ class Retriever(StrEnum):
     TEXTCHUNK = "textchunk"
     METADATA = "metadata"
     BM25 = "bm25"
+    STORY = "story"
 
 
 class RAG(StrEnum):
     BASE = "base"
     CRAG = "crag"
     SRAG = "srag"
+    PRAG = "prag"
 
 
 class InvokeInput(BaseModel):
@@ -92,6 +99,8 @@ async def invoke(input: InvokeInput) -> JSONResponse:
             retriever = MetadataVectorStore().as_retriever()
         case Retriever.BM25:
             retriever = BM25VectorStore().as_retriever()
+        case Retriever.STORY:
+            retriever = StoryVectorStore().as_retriever()
         case _:
             raise ValueError(f"Invalid Retriever: {input.retriever}")
 
