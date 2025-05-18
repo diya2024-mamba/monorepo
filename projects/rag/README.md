@@ -5,9 +5,39 @@
 
 <br>
 
+## Setting
+1. `.env.example` 파일을 복사하여 `.env` 파일을 생성합니다:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. `.env` 파일에 아래와 같이 값을 입력합니다:
+
+| 변수명              | 설명                                 |
+|--------------------|--------------------------------------|
+| `OPENAI_API_KEY`   | ✅ 필수 입력 – OpenAI API 키           |
+| `RUNPOD_API_KEY`   | A/B 테스트에서 사용할 Runpod API 키 (미사용 시 공백)   |
+| `SERVER_PASSWORD`  | 웹페이지 접속 시 사용할 비밀번호       |
+```env
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+RUNPOD_API_KEY=
+SERVER_PASSWORD=your_secure_password
 ```
-python sever.py
+
+## 실행 방법
+
+1. 아래 명령어로 서버를 실행합니다:
+   ```bash
+   python rag/server/server.py
+   ```
+2. 웹 브라우저에서 다음 주소 중 하나로 접속합니다
 ```
+http://0.0.0.0:8000
+또는
+http://localhost:8000
+```
+3. `.env` 파일의 `SERVER_PASSWORD` 비밀번호 입력합니다.
+
 
 <br>
 
@@ -20,7 +50,8 @@ python sever.py
 ## RAG Architecture
 ### Prompt RAG
 
-![Image](https://github.com/user-attachments/assets/4c3ff511-8a82-4590-a3bb-baa93096501e)
+![image](https://github.com/user-attachments/assets/38de4e21-c5f8-4ed9-aaf2-a688f0b67ff9)
+
 
 <br>
 
