@@ -24,6 +24,21 @@ RUNPOD_API_KEY=
 SERVER_PASSWORD=your_secure_password
 ```
 
+## 실행 방법
+
+1. 아래 명령어로 서버를 실행합니다:
+   ```bash
+   python rag/server/server.py
+   ```
+2. 웹 브라우저에서 다음 주소 중 하나로 접속합니다
+```
+http://0.0.0.0:8000
+또는
+http://localhost:8000
+```
+3. `.env` 파일의 `SERVER_PASSWORD` 비밀번호 입력합니다.
+
+
 <br>
 
 ## Service Architecture
